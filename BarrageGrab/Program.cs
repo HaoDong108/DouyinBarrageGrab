@@ -15,7 +15,7 @@ namespace BarrageGrab
         static void Main(string[] args)
         {
             SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
-
+            Console.Title = "抖音弹幕监听推送";
             server = new WssBarrageService();
             server.StartListen();
 
