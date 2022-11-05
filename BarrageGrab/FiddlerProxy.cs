@@ -33,7 +33,7 @@ namespace BarrageGrab
         /// </summary>
         public void Start()
         {
-            FiddlerApplication.Startup(8887, FiddlerCoreStartupFlags.Default);
+            FiddlerApplication.Startup(8827, FiddlerCoreStartupFlags.Default);
             console.WriteLine("Fiddler代理已启动", ConsoleColor.Green);
         }
 
@@ -64,11 +64,18 @@ namespace BarrageGrab
             {
                 oRootCert = CertMaker.GetRootCertificate();
             }
+            //信任证书
+            CertMaker.trustRootCert();
+
             FiddlerApplication.oDefaultClientCertificate = oRootCert;
             //忽略服务器证书错误
             CONFIG.IgnoreServerCertErrors = true;
-            //信任证书
-            CertMaker.trustRootCert();
+            CONFIG.bEnableIPv6 = false;
+            //CONFIG.bCaptureCONNECT = true;
+            //CONFIG.bUseEventLogForExceptions = false;
+            //CONFIG.bAutoProxyLogon = false;
+            //CONFIG.bMITM_HTTPS = false;
+            ////CONFIG.SetNoDecryptList("*");
         }
 
         private void FiddlerApplication_OnWebSocketMessage(object sender, WebSocketMessageEventArgs e)
