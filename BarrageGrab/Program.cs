@@ -24,12 +24,12 @@ namespace BarrageGrab
                 var input = Console.ReadKey();
                 switch (input.Key)
                 {
-                    case ConsoleKey.Escape: goto end;
+                    case ConsoleKey.Escape: goto end; break;
                 }
             }
 
         end:
-            Console.ReadKey();
+            server.Close();
             Console.WriteLine("服务器已正常关闭，按任意键结束...");
             Console.ReadKey();
         }
