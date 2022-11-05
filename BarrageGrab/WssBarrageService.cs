@@ -23,6 +23,7 @@ namespace BarrageGrab
         ConsoleWriter console = new ConsoleWriter();
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Get();
+        int printCount = 0;
 
         public WssBarrageService()
         {
@@ -36,6 +37,9 @@ namespace BarrageGrab
             this.grab.OnMemberMessage += Grab_OnMemberMessage;
             this.grab.OnSocialMessage += Grab_OnSocialMessage;
             this.grab.OnGiftMessage += Grab_OnGiftMessage;
+            this.grab.OnRoomUserSeqMessage += Grab_OnRoomUserSeqMessage;
+            this.grab.OnFansclubMessage += Grab_OnFansclubMessage; ;
+            //this.grab.OnControlMessage += Grab_OnControlMessage;
 
             this.socketServer = socket;
             //dieout.Start();
@@ -54,6 +58,39 @@ namespace BarrageGrab
             return user;
         }
 
+        private void Grab_OnFansclubMessage(object sender, ProtoEntity.FansclubMessage e)
+        {
+            var enty = new FansclubMsg()
+            {
+                Content = e.Content,
+                RoomId = e.commonInfo.roomId,
+                Type = e.Type,
+                User = GetUser(e)
+            };
+            Print($"[粉丝团消息] " + enty.Content, ConsoleColor.Blue);
+            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.粉丝团信息);
+            var json = JsonConvert.SerializeObject(pack);
+            this.Broadcast(json);
+        }
+
+        private void Grab_OnRoomUserSeqMessage(object sender, ProtoEntity.RoomUserSeqMessage e)
+        {
+            var enty = new UserSeqMsg()
+            {
+                OnlineUserCount = e.Total,
+                TotalUserCount = e.totalUser,
+                TotalUserCountStr = e.totalPvForAnchor,
+                OnlineUserCountStr = e.onlineUserForAnchor,
+                RoomId = e.Common.roomId,
+                Content = $"当前直播间人数 {e.onlineUserForAnchor}，累计直播间人数 {e.totalPvForAnchor}",
+                User = null
+            };
+            Print($"[直播间统计] " + enty.Content, ConsoleColor.Magenta);
+            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.直播间统计);
+            var json = JsonConvert.SerializeObject(pack);
+            this.Broadcast(json);
+        }
+
         private void Grab_OnGiftMessage(object sender, ProtoEntity.GiftMessage e)
         {
             var enty = new GiftMsg()
@@ -66,6 +103,7 @@ namespace BarrageGrab
                 GiftName = e.Gift.Name,
                 User = GetUser(e)
             };
+            Print($"[礼物消息] " + enty.Content, ConsoleColor.Red);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.送礼);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -75,10 +113,11 @@ namespace BarrageGrab
         {
             var enty = new Msg()
             {
-                Content = e.Common.Describe,
+                Content = $"{e.User.Nickname} 关注了主播",
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
+            Print("[关注消息] " + enty.Content, ConsoleColor.Yellow);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.关注主播);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -88,10 +127,11 @@ namespace BarrageGrab
         {
             var enty = new Msg()
             {
-                Content = e.Common.Describe,
+                Content = $"{e.User.Nickname} 来了",
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
+            Print("[进直播间] " + enty.Content, ConsoleColor.Green);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.进入直播间);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -102,10 +142,11 @@ namespace BarrageGrab
             var enty = new LikeMsg()
             {
                 Count = e.Count,
-                Content = e.Common.Describe,
+                Content = $"{e.User.Nickname} 为主播点了{e.Count}个赞",
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
+            Print("[点赞消息] " + enty.Content, ConsoleColor.Cyan);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.点赞);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -119,9 +160,24 @@ namespace BarrageGrab
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
+            Print($"[弹幕消息] {enty.User.Nickname}: {enty.Content}", ConsoleColor.White);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.消息);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
+        }
+
+        private void Print(string msg, ConsoleColor color)
+        {
+            if (Appsetting.PrintBarrage)
+            {
+                console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")} " + msg + "\n", color);
+                if (++printCount > 99999)
+                {
+                    printCount = 0;
+                    Console.Clear();
+                    Console.WriteLine("已执行清理");
+                }
+            }
         }
 
         private void Dieout_Elapsed(object sender, ElapsedEventArgs e)
@@ -176,6 +232,7 @@ namespace BarrageGrab
             this.grab.Start(); //启动代理
             this.socketServer.Start(Listen);//启动监听
             console.WriteLine($"{this.socketServer.Location} 弹幕服务已启动...", ConsoleColor.Green);
+            Console.Title = $"抖音弹幕监听推送 [{this.socketServer.Location}]";
         }
 
         /// <summary>

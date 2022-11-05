@@ -123,30 +123,35 @@ namespace BarrageGrab
             {
                 switch (msg.Method)
                 {
+                    //来了
                     case "WebcastMemberMessage":
                         {
                             var arg = Serializer.Deserialize<MemberMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnMemberMessage?.Invoke(this, arg);
                             break;
                         }
+                    //关注
                     case "WebcastSocialMessage":
                         {
                             var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnSocialMessage?.Invoke(this, arg);
                             break;
                         }
+                    //消息
                     case "WebcastChatMessage":
                         {
                             var arg = Serializer.Deserialize<ChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnChatMessage?.Invoke(this, arg);
                             break;
                         }
+                    //点赞
                     case "WebcastLikeMessage":
                         {
                             var arg = Serializer.Deserialize<LikeMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnLikeMessage?.Invoke(this, arg);
                             break;
                         }
+                    //礼物
                     case "WebcastGiftMessage":
                         {
                             var arg = Serializer.Deserialize<GiftMessage>(new ReadOnlyMemory<byte>(msg.Payload));
@@ -189,18 +194,21 @@ namespace BarrageGrab
                             this.OnGiftMessage?.Invoke(this, arg);
                             break;
                         }
+                    //直播间统计
                     case "WebcastRoomUserSeqMessage":
                         {
                             var arg = Serializer.Deserialize<RoomUserSeqMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnRoomUserSeqMessage?.Invoke(this, arg);
                             break;
                         }
+                    //直播间状态变更
                     case "WebcastControlMessage":
                         {
                             var arg = Serializer.Deserialize<ControlMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnControlMessage?.Invoke(this, arg);
                             break;
                         }
+                    //粉丝团消息
                     case "WebcastFansclubMessage":
                         {
                             var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
