@@ -8,7 +8,7 @@
 
 ### 配置
 
-程序中有基本的配置可以过滤弹幕进程，弹幕数据通过Websocket服务推送，只需连接到本服务器就能接收到到弹幕数据消息
+程序中有基本的配置可以过滤弹幕进程，弹幕数据通过Websocket服务推送，其他程序只需接入ws服务器就能接收到到弹幕数据消息
 
 ``` xml
 	<appSettings>
@@ -21,7 +21,9 @@
 	</appSettings>
 ```
 
+### 推送数据格式
 
+弹幕数据由WebSocket服务进行分发，使用Json格式进行推送，见项目  [BarrageMessages.cs](./BarrageGrab/JsonEntity/BarrageMessages.cs)，如需调整请克隆项目后参照 [message.proto](./BarrageGrab/proto/message.proto) 进行源码修改调整，文件包含所有弹幕相关数据结构
 
 ## 🖼️控制台截图
 
