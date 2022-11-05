@@ -11,6 +11,14 @@ namespace BarrageGrab
     {
         private static readonly Appsetting ins = new Appsetting();
 
+
+        public Appsetting()
+        {
+            FilterProcess = AppSettings["filterProcess"].Trim().Split(',');
+            WsProt = int.Parse(AppSettings["wsListenPort"]);
+            PrintBarrage = AppSettings["printBarrage"] == "on";
+        }
+
         public static Appsetting Get()
         {
             return ins;
@@ -19,11 +27,16 @@ namespace BarrageGrab
         /// <summary>
         /// 过滤的进程
         /// </summary>
-        public string[] FilterProcess { get => AppSettings["filterProcess"].Trim().Split(','); }
+        public string[] FilterProcess { get; private set; }
 
         /// <summary>
         /// 端口号
         /// </summary>
-        public int WsProt { get => int.Parse(AppSettings["wsListenPort"]); }
+        public int WsProt { get; private set; }
+
+        /// <summary>
+        /// 控制台打印消息开关
+        /// </summary>
+        public bool PrintBarrage { get; private set; }
     }
 }
