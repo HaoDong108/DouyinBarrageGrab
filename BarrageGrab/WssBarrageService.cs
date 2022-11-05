@@ -23,7 +23,6 @@ namespace BarrageGrab
         ConsoleWriter console = new ConsoleWriter();
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Get();
-        int printCount = 0;
 
         public WssBarrageService()
         {
@@ -67,7 +66,7 @@ namespace BarrageGrab
                 Type = e.Type,
                 User = GetUser(e)
             };
-            Print($"[粉丝团消息] " + enty.Content, ConsoleColor.Blue);
+            Print($"[粉丝团消息] {enty.User.GenderToString()} " + enty.Content, ConsoleColor.Blue);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.粉丝团信息);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -103,7 +102,7 @@ namespace BarrageGrab
                 GiftName = e.Gift.Name,
                 User = GetUser(e)
             };
-            Print($"[礼物消息] " + enty.Content, ConsoleColor.Red);
+            Print($"[礼物消息] " + $"{enty.User.GenderToString()} " + enty.Content, ConsoleColor.Red);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.送礼);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -117,7 +116,7 @@ namespace BarrageGrab
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
-            Print("[关注消息] " + enty.Content, ConsoleColor.Yellow);
+            Print($"[关注消息] {enty.User.GenderToString()} " + enty.Content, ConsoleColor.Yellow);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.关注主播);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -131,7 +130,7 @@ namespace BarrageGrab
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
-            Print("[进直播间] " + enty.Content, ConsoleColor.Green);
+            Print($"[进直播间] {enty.User.GenderToString()} " + enty.Content, ConsoleColor.Green);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.进入直播间);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -146,7 +145,7 @@ namespace BarrageGrab
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
-            Print("[点赞消息] " + enty.Content, ConsoleColor.Cyan);
+            Print($"[点赞消息] {enty.User.GenderToString()} " + enty.Content, ConsoleColor.Cyan);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.点赞);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -160,7 +159,7 @@ namespace BarrageGrab
                 RoomId = e.Common.roomId,
                 User = GetUser(e)
             };
-            Print($"[弹幕消息] {enty.User.Nickname}: {enty.Content}", ConsoleColor.White);
+            Print($"[弹幕消息] {enty.User.GenderToString()}  {enty.User.Nickname}: {enty.Content}", ConsoleColor.White);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.消息);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -171,12 +170,6 @@ namespace BarrageGrab
             if (Appsetting.PrintBarrage)
             {
                 console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")} " + msg + "\n", color);
-                if (++printCount > 99999)
-                {
-                    printCount = 0;
-                    Console.Clear();
-                    Console.WriteLine("已执行清理");
-                }
             }
         }
 

@@ -102,6 +102,11 @@
         /// 性别 1男 2女
         /// </summary>
         public int Gender { get; set; }
+
+        public string GenderToString()
+        {
+            return Gender == 1 ? "男" : Gender == 2 ? "女" : "妖";
+        }
     }
 
     /// <summary>
