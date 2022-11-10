@@ -536,6 +536,9 @@ namespace BarrageGrab.ProtoEntity
         [global::ProtoBuf.ProtoMember(1, Name = @"common")]
         public Common Common { get; set; }
 
+        /// <summary>
+        /// 3 下播
+        /// </summary>
         [global::ProtoBuf.ProtoMember(2, Name = @"status")]
         public int Status { get; set; }
 

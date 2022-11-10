@@ -27,7 +27,7 @@
 
 ## 🖼️控制台截图
 
-![控制台截图](./resources/%E6%8E%A7%E5%88%B6%E5%8F%B0%E6%88%AA%E5%9B%BE.png)
+[![控制台截图](https://s1.ax1x.com/2022/11/10/z9YYPU.png)](https://imgse.com/i/z9YYPU)
 
 
 
