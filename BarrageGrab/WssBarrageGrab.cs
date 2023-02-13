@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.ProtoEntity;
 using ProtoBuf;
+using ColorConsole;
 
 namespace BarrageGrab
 {
