@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.ProtoEntity;
 using ProtoBuf;
+using ColorConsole;
 
 namespace BarrageGrab
 {
@@ -17,6 +18,7 @@ namespace BarrageGrab
     {
         FiddlerProxy proxy = new FiddlerProxy();
         Appsetting appsetting = Appsetting.Get();
+        ConsoleWriter console = new ConsoleWriter();
 
         /// <summary>
         /// 进入直播间
@@ -187,7 +189,7 @@ namespace BarrageGrab
                                 }
                                 else
                                 {
-                                    
+                                    console.WriteLine("未能识别的礼物ID：" + arg.giftId, ConsoleColor.Red);
                                     break;
                                 }
                             }
