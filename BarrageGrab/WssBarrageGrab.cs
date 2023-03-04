@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BarrageGrab.ProtoEntity;
 using ProtoBuf;
 using ColorConsole;
+using BarrageGrab.Proxy;
 
 namespace BarrageGrab
 {
@@ -16,7 +17,8 @@ namespace BarrageGrab
     /// </summary>
     public class WssBarrageGrab : IDisposable
     {
-        FiddlerProxy proxy = new FiddlerProxy();
+        //ISystemProxy proxy = new FiddlerProxy();
+        ISystemProxy proxy = new TitaniumProxy();
         Appsetting appsetting = Appsetting.Get();
         ConsoleWriter console = new ConsoleWriter();
 
@@ -94,13 +96,14 @@ namespace BarrageGrab
             return outBuffer.ToArray();
         }
 
-        private void Proxy_OnWebSocketData(object sender, FiddlerProxy.WsMessageEventArgs e)
+        private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
             if (!appsetting.FilterProcess.Contains(e.ProcessName)) return;
-            var buff = e.Message.PayloadData;
+            var buff = e.Payload;
             if (buff.Length == 0) return;
             if (buff[0] != 0x08) return;
 
+           
             try
             {
                 var enty = Serializer.Deserialize<WssResponse>(new ReadOnlyMemory<byte>(buff));
@@ -108,6 +111,7 @@ namespace BarrageGrab
 
                 //检测包格式
                 if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip")) return;
+
 
                 //解压gzip
                 var odata = enty.Payload;

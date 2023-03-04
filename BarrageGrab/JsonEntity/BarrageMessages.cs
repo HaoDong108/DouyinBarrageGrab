@@ -132,7 +132,7 @@
         /// <summary>
         /// 抖币价格
         /// </summary>
-        public int GiamondCount { get; set; }
+        public int DiamondCount { get; set; }
     }
 
     /// <summary>

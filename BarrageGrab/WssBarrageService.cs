@@ -23,7 +23,7 @@ namespace BarrageGrab
         ConsoleWriter console = new ConsoleWriter();
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Get();
-
+        
         public WssBarrageService()
         {
             var socket = new WebSocketServer($"ws://127.0.0.1:{Appsetting.WsProt}");
@@ -96,7 +96,7 @@ namespace BarrageGrab
             {
                 RoomId = e.Common.roomId,
                 Content = e.Common.Describe,
-                GiamondCount = e.Gift.diamondCount,
+                DiamondCount = e.Gift.diamondCount,
                 GiftCount = e.repeatCount,
                 GiftId = e.giftId,
                 GiftName = e.Gift.Name,

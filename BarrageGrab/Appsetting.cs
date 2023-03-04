@@ -11,12 +11,14 @@ namespace BarrageGrab
     {
         private static readonly Appsetting ins = new Appsetting();
 
+        public static Appsetting Instanse { get => Get(); }
 
         public Appsetting()
         {
             FilterProcess = AppSettings["filterProcess"].Trim().Split(',');
             WsProt = int.Parse(AppSettings["wsListenPort"]);
-            PrintBarrage = AppSettings["printBarrage"] == "on";
+            PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
+            ProxyPort = int.Parse(AppSettings["proxPort"]);
         }
 
         public static Appsetting Get()
@@ -38,5 +40,10 @@ namespace BarrageGrab
         /// 控制台打印消息开关
         /// </summary>
         public bool PrintBarrage { get; private set; }
+
+        /// <summary>
+        /// 代理端口
+        /// </summary>
+        public int ProxyPort { get; private set; } = 8827;
     }
 }
