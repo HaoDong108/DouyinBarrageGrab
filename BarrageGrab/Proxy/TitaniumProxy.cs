@@ -29,12 +29,17 @@ namespace BarrageGrab.Proxy
             //RegisterSystemProxy();
             proxyServer = new ProxyServer();
 
-            //var cert = EnsureCertificate("localhost");
-
             proxyServer.ReuseSocket = false;
             proxyServer.EnableConnectionPool = true;
             proxyServer.ForwardToUpstreamGateway = true;
             proxyServer.CertificateManager.SaveFakeCertificates = true;
+
+            proxyServer.CertificateManager.RootCertificate = proxyServer.CertificateManager.LoadRootCertificate();
+            if (proxyServer.CertificateManager.RootCertificate == null)
+            {
+                Console.WriteLine("正在进行证书安装，需要安装证书才可进行https解密，若有提示请确定");
+                proxyServer.CertificateManager.CreateRootCertificate();
+            }
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback; ;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
