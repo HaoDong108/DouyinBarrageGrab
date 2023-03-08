@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BarrageGrab.JsonEntity;
 using static System.Configuration.ConfigurationManager;
 namespace BarrageGrab
 {
@@ -11,19 +12,31 @@ namespace BarrageGrab
     {
         private static readonly Appsetting ins = new Appsetting();
 
-        public static Appsetting Instanse { get => Get(); }
+        public static Appsetting Current { get => ins; }
 
         public Appsetting()
         {
-            FilterProcess = AppSettings["filterProcess"].Trim().Split(',');
-            WsProt = int.Parse(AppSettings["wsListenPort"]);
-            PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
-            ProxyPort = int.Parse(AppSettings["proxPort"]);
-        }
+            try
+            {
+                FilterProcess = AppSettings["filterProcess"].Trim().Split(',');
+                WsProt = int.Parse(AppSettings["wsListenPort"]);
+                PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
+                ProxyPort = int.Parse(AppSettings["proxPort"]);
+                PrintFilter = Enum.GetValues(typeof(BarrageMsgType)).Cast<int>().ToArray();
+                //RoomIds = AppSettings["roomIds"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).Select(s => long.Parse(s)).ToArray();
 
-        public static Appsetting Get()
-        {
-            return ins;
+                var printFilter = AppSettings["printFilter"].Trim().ToLower();
+                if (printFilter != "all")
+                {
+                    if (string.IsNullOrWhiteSpace(printFilter)) PrintFilter = new int[0];
+                    else PrintFilter = printFilter.Split(',').Select(x => int.Parse(x)).ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("配置文件读取失败,请检查配置文件是否正确");
+                throw ex;
+            }            
         }
 
         /// <summary>
@@ -45,5 +58,15 @@ namespace BarrageGrab
         /// 代理端口
         /// </summary>
         public int ProxyPort { get; private set; } = 8827;
+
+        /// <summary>
+        /// 控制台输出过滤器
+        /// </summary>
+        public int[] PrintFilter { get; private set; }
+
+        /// <summary>
+        /// 监听的房间号
+        /// </summary>
+        public long[] RoomIds { get; private set; } = new long[0];
     }
 }
