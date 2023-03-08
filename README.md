@@ -2,6 +2,13 @@
 
 ## ⛳近期更新
 
+  2023-03-09
+
+1. 针对直播伴侣抓不到的问题 放宽了域名规则限制(个人没几个粉丝，不好测试，有问题请第一时间提出)
+2. 添加了更多配置项，请再次查看配置说明
+
+   2023-03-04
+
 1. 【重大更新】更换了底层代理框架，从而解决了原先版本随着系统请求总数增加而导致内存溢出的情况
 2.   过滤了无关业务的域名，从而提升代理后的请求响应速度
 
@@ -19,15 +26,30 @@
 ``` xml
 	<appSettings>
 		<!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
-		<add key="filterProcess" value="直播伴侣,chrome,msedge"/>
+		<add key="processFilter" value="直播伴侣,chrome,msedge"/>
 		<!--Websocket监听端口-->
 		<add key="wsListenPort" value="8888"/>
 		<!--在控制台输出弹幕-->
 		<add key="printBarrage" value="true"/>
+		<!--要在控制台打印的弹幕类型,可以用','隔开   all[全部]，1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]-->
+		<add key="printFilter" value="all"/>
 		<!--系统代理端口-->
-		<add key="proxPort" value="8827"/>
+		<add key="proxyPort" value="8827"/>
+		<!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
+		<add key="filterHostName" value="true"/>
+		<!--已知的弹幕域名列表，用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
+		<add key="hostNameFilter" value="
+			webcast3-ws-web-hl.douyin.com,
+             webcast3-ws-web-lf.douyin.com,
+			webcast100-ws-web-lq.amemv.com,
+             frontier-im.douyin.com,            
+		"/>
 	</appSettings>
 ```
+
+### 关于域名白名单的问题
+
+如果你在使用过程中发现有获取不到弹幕的问题，请将`filterHostName` 设置为 `false`后再次尝试，如果发现修改配置后能够成功获取，请在程序运行目录下找到"成功解包域名缓存.txt"文件，在里面找到新的域名并添加到 `hostNameFilter`中，然后重新修改`filterHostName`为`true`。除此之外，你可以提交 Issues 或者 Pull Request 到仓库，帮助提高程序健壮性。
 
 ### 推送数据格式
 
