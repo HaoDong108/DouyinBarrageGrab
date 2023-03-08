@@ -19,8 +19,17 @@ namespace BarrageGrab
     {
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
-        Appsetting appsetting = Appsetting.Get();
+        Appsetting appsetting = Appsetting.Current;
         ConsoleWriter console = new ConsoleWriter();
+
+        //已知的弹幕域名服务器
+        string[] wsHostNames = new string[]
+        {
+            "webcast3-ws-web-hl.douyin.com",
+            "webcast3-ws-web-lf.douyin.com",
+            "frontier-im.douyin.com",
+            "webcast100-ws-web-lq.amemv.com"
+        };
 
         /// <summary>
         /// 进入直播间
@@ -65,6 +74,7 @@ namespace BarrageGrab
         public WssBarrageGrab()
         {
             proxy.OnWebSocketData += Proxy_OnWebSocketData;
+            proxy.HostNameFilter = HostNameChecker;
         }
 
         public void Start()
@@ -75,6 +85,16 @@ namespace BarrageGrab
         public void Dispose()
         {
             proxy.Dispose();
+        }
+
+        //域名过滤器
+        private bool HostNameChecker(string hostName)
+        {
+            if (hostName.StartsWith("webcast")) return true;
+
+            if (wsHostNames.Any(a => a.ToLower() == hostName.ToLower())) return true;
+
+            return false;
         }
 
         //gzip解压缩
@@ -95,7 +115,8 @@ namespace BarrageGrab
             compressedzipStream.Close();
             return outBuffer.ToArray();
         }
-
+    
+        //ws数据处理
         private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
             if (!appsetting.FilterProcess.Contains(e.ProcessName)) return;
@@ -103,7 +124,7 @@ namespace BarrageGrab
             if (buff.Length == 0) return;
             if (buff[0] != 0x08) return;
 
-           
+
             try
             {
                 var enty = Serializer.Deserialize<WssResponse>(new ReadOnlyMemory<byte>(buff));
@@ -123,6 +144,7 @@ namespace BarrageGrab
             catch (Exception) { }
         }
 
+        //发送事件
         private void DoMessage(Message msg)
         {
             try

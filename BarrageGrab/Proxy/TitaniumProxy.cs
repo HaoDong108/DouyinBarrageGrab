@@ -44,7 +44,7 @@ namespace BarrageGrab.Proxy
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback; ;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
 
-            explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any,ProxyPort, true);
+            explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
         }
@@ -57,7 +57,6 @@ namespace BarrageGrab.Proxy
             {
                 e.IsValid = true;
             }
-
             return Task.CompletedTask;
         }
 
@@ -65,20 +64,16 @@ namespace BarrageGrab.Proxy
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
             string hostname = e.HttpClient.Request.RequestUri.Host;
-            if (!barrageWsHostNames.Contains(hostname)) return;
-
             if (e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket)
             {
                 e.DataReceived += WebSocket_DataReceived;
-            }
+            }                       
         }
-
-        //List<string> hostlist = new List<string>();
 
         private async Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
         {
             string hostname = e.HttpClient.Request.RequestUri.Host;
-            if (!barrageWsHostNames.Contains(hostname))
+            if (!CheckHost(hostname))
             {
                 e.DecryptSsl = false;
             }
@@ -93,12 +88,10 @@ namespace BarrageGrab.Proxy
             var processid = args.HttpClient.ProcessId.Value;
 
             var frames = args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count).ToList();
-            //Console.WriteLine(frames.Count);
-
+            
             foreach (var frame in frames)
-            {
-                //Console.WriteLine(frame.GetText());
-                base.SendWebSocketData(new WsMessageEventArgs()
+            {                
+                base.FireWsEvent(new WsMessageEventArgs()
                 {
                     ProcessID = processid,
                     HostName = hostname,
@@ -106,9 +99,6 @@ namespace BarrageGrab.Proxy
                     ProcessName = base.GetProcessName(processid)
                 });
             }
-            //Console.WriteLine("获取到弹幕信息:" + hostname);
-
-            
         }
 
         /// <summary>

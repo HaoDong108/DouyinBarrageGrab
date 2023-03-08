@@ -1,12 +1,18 @@
 ﻿using System;
 using Fiddler;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace BarrageGrab.Proxy
 {
     internal interface ISystemProxy : IDisposable
     {
         event EventHandler<WsMessageEventArgs> OnWebSocketData;
+
+        /// <summary>
+        /// 域名过滤器
+        /// </summary>
+        Func<string, bool> HostNameFilter { get; set; }
 
         /// <summary>
         /// 开始监听

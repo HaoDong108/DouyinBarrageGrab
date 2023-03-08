@@ -11,12 +11,12 @@ namespace BarrageGrab
     {
         private delegate bool ControlCtrlDelegate(int CtrlType);
 
-        static WssBarrageService server = null;
+        static WsBarrageService server = null;
         static void Main(string[] args)
         {
             SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
             Console.Title = "抖音弹幕监听推送";
-            server = new WssBarrageService();
+            server = new WsBarrageService();
             server.StartListen();
 
             while (true)

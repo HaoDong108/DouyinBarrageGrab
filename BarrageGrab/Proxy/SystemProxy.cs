@@ -13,17 +13,10 @@ namespace BarrageGrab.Proxy
 {
     internal abstract class SystemProxy : ISystemProxy
     {
-        //弹幕服务域名
-        protected string[] barrageWsHostNames = new string[]
-        {
-            "webcast3-ws-web-hl.douyin.com",
-            "webcast3-ws-web-lf.douyin.com",
-            "frontier-im.douyin.com",
-            "webcast100-ws-web-lq.amemv.com"
-        };
-
-
-        //https://live.douyin.com/webcast/gift/list/
+        /// <summary>
+        /// 域名过滤器
+        /// </summary>
+        public Func<string, bool> HostNameFilter { get; set; }        
 
         /// <summary>
         /// 接收到websocket消息事件
@@ -33,17 +26,42 @@ namespace BarrageGrab.Proxy
         /// <summary>
         /// 代理端口
         /// </summary>
-        public int ProxyPort { get => Appsetting.Instanse.ProxyPort; }
+        public int ProxyPort { get => Appsetting.Current.ProxyPort; }        
 
         public abstract void Dispose();
 
         public abstract void Start();
 
-        protected void SendWebSocketData(WsMessageEventArgs args)
+        //https://live.douyin.com/webcast/gift/list/ [礼物数据接口]
+
+        /// <summary>
+        /// 检测是否是业务相关链接
+        /// </summary>
+        /// <param name="host"></param>
+        /// <returns></returns>
+        protected bool CheckHost(string host)
+        {
+            var result = true;
+
+            if (HostNameFilter != null) return HostNameFilter(host);
+
+            return result;
+        }
+
+        /// <summary>
+        /// 触发websocket消息事件
+        /// </summary>
+        /// <param name="args"></param>
+        protected void FireWsEvent(WsMessageEventArgs args)
         {
             OnWebSocketData?.Invoke(this, args);
         }
 
+        /// <summary>
+        /// 获取进程名称
+        /// </summary>
+        /// <param name="processID"></param>
+        /// <returns></returns>
         protected string GetProcessName(int processID)
         {
             var process = Process.GetProcessById(processID);
@@ -54,7 +72,9 @@ namespace BarrageGrab.Proxy
             return $"<{processID}>";
         }
 
-        //注册系统代理
+        /// <summary>
+        /// 注册系统代理
+        /// </summary>
         protected void RegisterSystemProxy()
         {
             RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
