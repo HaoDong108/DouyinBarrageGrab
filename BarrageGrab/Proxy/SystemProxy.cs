@@ -18,7 +18,8 @@ namespace BarrageGrab.Proxy
         {
             "webcast3-ws-web-hl.douyin.com",
             "webcast3-ws-web-lf.douyin.com",
-            "frontier-im.douyin.com"
+            "frontier-im.douyin.com",
+            "webcast100-ws-web-lq.amemv.com"
         };
 
 
