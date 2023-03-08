@@ -6,13 +6,13 @@
     public enum BarrageMsgType
     {
         无 = 0,
-        消息,
-        点赞,
-        进入直播间,
-        关注主播,
-        送礼,
-        直播间统计,
-        粉丝团信息
+        弹幕消息 = 1,
+        点赞消息 = 2,
+        进直播间 = 3,
+        关注消息 = 4,
+        礼物消息 = 5,
+        直播间统计 = 6,
+        粉丝团消息 = 7
     }
 
     /// <summary>
@@ -125,9 +125,15 @@
         public string GiftName { get; set; }
 
         /// <summary>
-        /// 礼物数量
+        /// 礼物数量(连续的)
         /// </summary>
         public long GiftCount { get; set; }
+
+        /// <summary>
+        /// 礼物数量(本次)
+        /// </summary>
+        public long GroupCount { get; set; }
+
 
         /// <summary>
         /// 抖币价格
@@ -144,6 +150,11 @@
         /// 点赞数量
         /// </summary>
         public long Count { get; set; }
+
+        /// <summary>
+        /// 总共点赞数量
+        /// </summary>
+        public long Total { get; set; }
     }
 
     /// <summary>
@@ -181,5 +192,16 @@
         /// 粉丝团消息类型,升级1，加入2
         /// </summary>
         public int Type { get; set; }
+    }
+
+    /// <summary>
+    /// 来了消息
+    /// </summary>
+    public class MemberMessage : Msg
+    {
+        /// <summary>
+        /// 当前直播间人数
+        /// </summary>
+        public long CurrentCount { get; set; }
     }
 }
