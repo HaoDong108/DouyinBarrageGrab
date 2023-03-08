@@ -18,11 +18,13 @@ namespace BarrageGrab
         {
             try
             {
-                FilterProcess = AppSettings["filterProcess"].Trim().Split(',');
+                ProcessFilter = AppSettings["processFilter"].Trim().Split(',');
                 WsProt = int.Parse(AppSettings["wsListenPort"]);
                 PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
-                ProxyPort = int.Parse(AppSettings["proxPort"]);
+                ProxyPort = int.Parse(AppSettings["proxyPort"]);
                 PrintFilter = Enum.GetValues(typeof(BarrageMsgType)).Cast<int>().ToArray();
+                FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
+                HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',');
                 //RoomIds = AppSettings["roomIds"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).Select(s => long.Parse(s)).ToArray();
 
                 var printFilter = AppSettings["printFilter"].Trim().ToLower();
@@ -42,7 +44,7 @@ namespace BarrageGrab
         /// <summary>
         /// 过滤的进程
         /// </summary>
-        public string[] FilterProcess { get; private set; }
+        public string[] ProcessFilter { get; private set; }
 
         /// <summary>
         /// 端口号
@@ -68,5 +70,15 @@ namespace BarrageGrab
         /// 监听的房间号
         /// </summary>
         public long[] RoomIds { get; private set; } = new long[0];
+
+        /// <summary>
+        /// 使用域名过滤
+        /// </summary>
+        public bool FilterHostName { get; private set; } = true;
+
+        /// <summary>
+        /// 域名白名单列表
+        /// </summary>
+        public string[] HostNameFilter { get; private set; } = new string[0];
     }
 }

@@ -21,15 +21,11 @@ namespace BarrageGrab
         ISystemProxy proxy = new TitaniumProxy();
         Appsetting appsetting = Appsetting.Current;
         ConsoleWriter console = new ConsoleWriter();
+        //解包成功的域名缓存
+        List<string> succPackHostNames = new List<string>();
 
         //已知的弹幕域名服务器
-        string[] wsHostNames = new string[]
-        {
-            "webcast3-ws-web-hl.douyin.com",
-            "webcast3-ws-web-lf.douyin.com",
-            "frontier-im.douyin.com",
-            "webcast100-ws-web-lq.amemv.com"
-        };
+        string[] wsHostNames = Appsetting.Current.HostNameFilter;
 
         /// <summary>
         /// 进入直播间
@@ -87,9 +83,11 @@ namespace BarrageGrab
             proxy.Dispose();
         }
 
+
         //域名过滤器
         private bool HostNameChecker(string hostName)
         {
+            if (!Appsetting.Current.FilterHostName) return true;
             if (hostName.StartsWith("webcast")) return true;
 
             if (wsHostNames.Any(a => a.ToLower() == hostName.ToLower())) return true;
@@ -115,11 +113,11 @@ namespace BarrageGrab
             compressedzipStream.Close();
             return outBuffer.ToArray();
         }
-    
+
         //ws数据处理
         private void Proxy_OnWebSocketData(object sender, WsMessageEventArgs e)
         {
-            if (!appsetting.FilterProcess.Contains(e.ProcessName)) return;
+            if (!appsetting.ProcessFilter.Contains(e.ProcessName)) return;
             var buff = e.Payload;
             if (buff.Length == 0) return;
             if (buff[0] != 0x08) return;
@@ -133,12 +131,17 @@ namespace BarrageGrab
                 //检测包格式
                 if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip")) return;
 
-
                 //解压gzip
                 var odata = enty.Payload;
                 var decomp = Decompress(odata);
 
                 var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(decomp));
+
+                if (!succPackHostNames.Contains(e.HostName))
+                {
+                    succPackHostNames.Add(e.HostName);
+                    SaveHostNameCache();
+                }
                 response.Messages.ForEach(f => DoMessage(f));
             }
             catch (Exception) { }
@@ -251,6 +254,35 @@ namespace BarrageGrab
             catch (Exception)
             {
                 return;
+            }
+        }
+
+        //将成功解包的域名缓存到文件
+        private void SaveHostNameCache()
+        {
+            //获取程序运行目录
+            var baseDir = Directory.GetCurrentDirectory();
+            var fullPath = Path.Combine(baseDir, "成功解包域名缓存.txt");
+
+            try
+            {
+                //文件不存在则创建
+                if (!File.Exists(fullPath))
+                {
+                    File.Create(fullPath);
+                }
+                var text = File.ReadAllText(fullPath);
+                var currentHosts = text.Split('\n').Where(w => !string.IsNullOrWhiteSpace(w)).Select(s=>s.Trim().Trim('\r')).ToList();
+                var newHosts = succPackHostNames.Except(currentHosts).ToList();
+                //保存
+                if (newHosts.Count > 0)
+                {
+                    File.AppendAllLines(fullPath, newHosts);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("写入成功解包域名缓存失败：" + ex.Message, ConsoleColor.Red);
             }
         }
     }
