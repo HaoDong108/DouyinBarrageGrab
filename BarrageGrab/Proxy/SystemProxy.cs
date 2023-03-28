@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Diagnostics;
+using BarrageGrab.Proxy.ProxyEventArgs;
 
 namespace BarrageGrab.Proxy
 {
@@ -22,6 +23,11 @@ namespace BarrageGrab.Proxy
         /// 接收到websocket消息事件
         /// </summary>
         public event EventHandler<WsMessageEventArgs> OnWebSocketData;
+
+        /// <summary>
+        /// 接收到http响应事件
+        /// </summary>
+        public event EventHandler<HttpResponseEventArgs> OnResponse;
 
         /// <summary>
         /// 代理端口
@@ -55,6 +61,15 @@ namespace BarrageGrab.Proxy
         protected void FireWsEvent(WsMessageEventArgs args)
         {
             OnWebSocketData?.Invoke(this, args);
+        }
+
+        /// <summary>
+        /// 触发http响应事件
+        /// </summary>
+        /// <param name="args"></param>
+        protected void FireOnResponse(HttpResponseEventArgs args)
+        {
+            OnResponse?.Invoke(this, args);
         }
 
         /// <summary>

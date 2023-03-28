@@ -323,6 +323,8 @@ message User{
     AnchorInfo anchorInfo = 36;
     int32 linkMicStats = 37;
     string displayId = 38;
+    string sec_uid = 46; //用户主页ID
+    int32 user_role = 47; //用户角色
 
     message UserAttr {
 

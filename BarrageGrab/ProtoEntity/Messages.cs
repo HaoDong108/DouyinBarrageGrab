@@ -6,6 +6,8 @@
 
 
 
+using System.Collections.Generic;
+
 namespace BarrageGrab.ProtoEntity
 {
 #pragma warning disable CS0612, CS0618, CS1591, CS3021, IDE0079, IDE1006, RCS1036, RCS1057, RCS1085, RCS1192
@@ -1016,6 +1018,17 @@ namespace BarrageGrab.ProtoEntity
         [global::ProtoBuf.ProtoMember(38)]
         [global::System.ComponentModel.DefaultValue("")]
         public string displayId { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(39)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string verified_content { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(46)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string sec_uid { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(47)]
+        public int user_role { get; set; } = 0;
 
         [global::ProtoBuf.ProtoContract()]
         public partial class UserAttr : global::ProtoBuf.IExtensible

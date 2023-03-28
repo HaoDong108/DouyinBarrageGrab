@@ -74,6 +74,22 @@
     }
 
     /// <summary>
+    /// 粉丝团信息
+    /// </summary>
+    public class FansClubInfo
+    {
+        /// <summary>
+        /// 粉丝团名称
+        /// </summary>
+        public string ClubName { get; set; }
+
+        /// <summary>
+        /// 粉丝团等级，没加入则0
+        /// </summary>
+        public int Level { get; set; }
+    }
+
+    /// <summary>
     /// 用户弹幕信息
     /// </summary>
     public class MsgUser
@@ -102,6 +118,21 @@
         /// 性别 1男 2女
         /// </summary>
         public int Gender { get; set; }
+
+        /// <summary>
+        /// 头像地址
+        /// </summary>
+        public string HeadImgUrl { get; set; }
+
+        /// <summary>
+        /// 用户主页地址
+        /// </summary>
+        public string SecUid { get; set; }
+
+        /// <summary>
+        /// 粉丝团信息
+        /// </summary>
+        public FansClubInfo FansClub { get; set; }        
 
         public string GenderToString()
         {

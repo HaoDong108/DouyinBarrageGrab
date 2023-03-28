@@ -9,6 +9,7 @@ using BarrageGrab.ProtoEntity;
 using ProtoBuf;
 using ColorConsole;
 using BarrageGrab.Proxy;
+using BarrageGrab.Proxy.ProxyEventArgs;
 
 namespace BarrageGrab
 {
@@ -70,7 +71,7 @@ namespace BarrageGrab
         public WssBarrageGrab()
         {
             proxy.OnWebSocketData += Proxy_OnWebSocketData;
-            proxy.HostNameFilter = HostNameChecker;
+            proxy.HostNameFilter = HostNameChecker;            
         }
 
         public void Start()
@@ -82,7 +83,6 @@ namespace BarrageGrab
         {
             proxy.Dispose();
         }
-
 
         //域名过滤器
         private bool HostNameChecker(string hostName)
@@ -122,7 +122,6 @@ namespace BarrageGrab
             if (buff.Length == 0) return;
             if (buff[0] != 0x08) return;
 
-
             try
             {
                 var enty = Serializer.Deserialize<WssResponse>(new ReadOnlyMemory<byte>(buff));
@@ -146,6 +145,8 @@ namespace BarrageGrab
             }
             catch (Exception) { }
         }
+
+        
 
         //发送事件
         private void DoMessage(Message msg)

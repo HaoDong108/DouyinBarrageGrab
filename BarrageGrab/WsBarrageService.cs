@@ -65,8 +65,19 @@ namespace BarrageGrab
                 Gender = data.Gender,
                 Id = data.Id,
                 Level = data.Level,
-                Nickname = data.Nickname
+                Nickname = data.Nickname,
+                HeadImgUrl = data.avatarThumb.urlLists.FirstOrDefault()??"",
+                SecUid = data.sec_uid
             };
+            if (data.fansClub.Data != null)
+            {
+                user.FansClub = new FansClubInfo()
+                {
+                    ClubName = data.fansClub.Data.clubName,
+                    Level = data.fansClub.Data.Level
+                };
+            }
+
             return user;
         }
 

@@ -25,7 +25,7 @@ namespace BarrageGrab
                 PrintFilter = Enum.GetValues(typeof(BarrageMsgType)).Cast<int>().ToArray();
                 FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
                 HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).ToArray();
-                //RoomIds = AppSettings["roomIds"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).Select(s => long.Parse(s)).ToArray();
+                RoomIds = AppSettings["roomIds"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).Select(s => long.Parse(s)).ToArray();
 
                 var printFilter = AppSettings["printFilter"].Trim().ToLower();
                 if (printFilter != "all")

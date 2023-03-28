@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using BarrageGrab.Proxy.ProxyEventArgs;
 using Microsoft.Win32;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
@@ -43,12 +44,28 @@ namespace BarrageGrab.Proxy
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback; ;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
+            proxyServer.AfterResponse += ProxyServer_AfterResponse;
 
             explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
         }
 
+        private Task ProxyServer_AfterResponse(object sender, SessionEventArgs e)
+        {
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+
+            this.FireOnResponse(new HttpResponseEventArgs()
+            {
+                ProcessID = processid,
+                HostName = hostname,
+                ProcessName = base.GetProcessName(processid),
+                HttpClient = e.HttpClient
+            });
+
+            return Task.CompletedTask;
+        }
 
         private Task ProxyServer_ServerCertificateValidationCallback(object sender, CertificateValidationEventArgs e)
         {
@@ -59,7 +76,6 @@ namespace BarrageGrab.Proxy
             }
             return Task.CompletedTask;
         }
-
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
