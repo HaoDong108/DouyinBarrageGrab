@@ -159,7 +159,7 @@ namespace BarrageGrab
             }
             else
             {
-                msgIdList = new List<long>(1000);
+                msgIdList = new List<long>(320);
                 msgDic.Add(msg.Method, msgIdList);
             }
             if (msgIdList.Contains(msg.msgId))
@@ -168,7 +168,7 @@ namespace BarrageGrab
             }
 
             msgIdList.Add(msg.msgId);
-            if (msgIdList.Count > 990) msgIdList.RemoveAt(0);
+            if (msgIdList.Count > 300) msgIdList.RemoveAt(0);
             
             try
             {
