@@ -58,6 +58,11 @@
     public class Msg
     {
         /// <summary>
+        /// 弹幕ID
+        /// </summary>
+        public long MsgId { get; set; }
+
+        /// <summary>
         /// 用户数据
         /// </summary>
         public MsgUser User { get; set; }

@@ -69,13 +69,16 @@ namespace BarrageGrab
                 HeadImgUrl = data.avatarThumb.urlLists.FirstOrDefault()??"",
                 SecUid = data.sec_uid
             };
-            if (data.fansClub.Data != null)
+            user.FansClub = new FansClubInfo()
             {
-                user.FansClub = new FansClubInfo()
-                {
-                    ClubName = data.fansClub.Data.clubName,
-                    Level = data.fansClub.Data.Level
-                };
+                ClubName = "",
+                Level = 0
+            };
+
+            if (data.fansClub!= null && data.fansClub.Data != null)
+            {
+                user.FansClub.ClubName = data.fansClub.Data.clubName;
+                user.Level = data.fansClub.Data.Level;
             }
 
             return user;
@@ -84,11 +87,12 @@ namespace BarrageGrab
         //粉丝团
         private void Grab_OnFansclubMessage(object sender, ProtoEntity.FansclubMessage e)
         {
-            if (!CheckRoomId(e.commonInfo.roomId)) return;
+            if (!CheckRoomId(e.Common.roomId)) return;
             var enty = new FansclubMsg()
             {
+                MsgId = e.Common.msgId,
                 Content = e.Content,
-                RoomId = e.commonInfo.roomId,
+                RoomId = e.Common.roomId,
                 Type = e.Type,
                 User = GetUser(e.User)
             };
@@ -104,6 +108,7 @@ namespace BarrageGrab
             if (!CheckRoomId(e.Common.roomId)) return;
             var enty = new UserSeqMsg()
             {
+                MsgId = e.Common.msgId,
                 OnlineUserCount = e.Total,
                 TotalUserCount = e.totalUser,
                 TotalUserCountStr = e.totalPvForAnchor,
@@ -125,6 +130,7 @@ namespace BarrageGrab
             
             var enty = new GiftMsg()
             {
+                MsgId = e.Common.msgId,
                 RoomId = e.Common.roomId,
                 Content = e.Common.Describe,
                 DiamondCount = e.Gift.diamondCount,
@@ -148,6 +154,7 @@ namespace BarrageGrab
             
             var enty = new Msg()
             {
+                MsgId = e.Common.msgId,
                 Content = $"{e.User.Nickname} 关注了主播",
                 RoomId = e.Common.roomId,
                 User = GetUser(e.User)
@@ -165,6 +172,7 @@ namespace BarrageGrab
             
             var enty = new JsonEntity.MemberMessage()
             {
+                MsgId = e.Common.msgId,
                 Content = $"{e.User.Nickname} 来了 直播间人数:{e.memberCount}",
                 RoomId = e.Common.roomId,
                 CurrentCount = e.memberCount,
@@ -183,6 +191,7 @@ namespace BarrageGrab
             
             var enty = new LikeMsg()
             {
+                MsgId = e.Common.msgId,
                 Count = e.Count,
                 Content = $"{e.User.Nickname} 为主播点了{e.Count}个赞，总点赞{e.Total}",
                 RoomId = e.Common.roomId,
@@ -202,6 +211,7 @@ namespace BarrageGrab
             
             var enty = new Msg()
             {
+                MsgId = e.Common.msgId,
                 Content = e.Content,
                 RoomId = e.Common.roomId,
                 User = GetUser(e.User)

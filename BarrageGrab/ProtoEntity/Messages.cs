@@ -554,7 +554,7 @@ namespace BarrageGrab.ProtoEntity
             => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
 
         [global::ProtoBuf.ProtoMember(1)]
-        public Common commonInfo { get; set; }
+        public Common Common { get; set; }
 
         /// <summary>
         /// 升级1 加入2
