@@ -103,18 +103,44 @@ namespace BarrageGrab.Proxy
 
             var processid = args.HttpClient.ProcessId.Value;
 
-            var frames = args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count).ToList();
-            
-            foreach (var frame in frames)
-            {                
-                base.FireWsEvent(new WsMessageEventArgs()
+            List<byte> messageData = new List<byte>();
+
+            foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
+            {
+                if (frame.OpCode == WebsocketOpCode.Continuation)
                 {
-                    ProcessID = processid,
-                    HostName = hostname,
-                    Payload = frame.Data.ToArray(),
-                    ProcessName = base.GetProcessName(processid)
-                });
+                    messageData.AddRange(frame.Data.ToArray());
+                    continue;
+                }
+                else
+                {
+                    byte[] payload;
+                    if (messageData.Count > 0)
+                    {
+                        messageData.AddRange(frame.Data.ToArray());
+                        payload = messageData.ToArray();
+                        messageData.Clear();
+                    }
+                    else
+                    {
+                        payload = frame.Data.ToArray();
+                    }
+
+                    base.FireWsEvent(new WsMessageEventArgs()
+                    {
+                        ProcessID = processid,
+                        HostName = hostname,
+                        Payload = payload,
+                        ProcessName = base.GetProcessName(processid)
+                    });
+                }
             }
+
+            if (messageData.Count > 0)
+            {
+                // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
+            }
+
         }
 
         /// <summary>
