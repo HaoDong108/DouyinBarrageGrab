@@ -146,11 +146,30 @@ namespace BarrageGrab
             catch (Exception) { }
         }
 
-        
+        //用于缓存接收过的消息ID，判断是否重复接收
+        Dictionary<string,List<long>> msgDic = new Dictionary<string,List<long>>();        
 
         //发送事件
         private void DoMessage(Message msg)
-        {
+        {            
+            List<long> msgIdList;
+            if (msgDic.ContainsKey(msg.Method))
+            {
+                msgIdList = msgDic[msg.Method];                
+            }
+            else
+            {
+                msgIdList = new List<long>(1000);
+                msgDic.Add(msg.Method, msgIdList);
+            }
+            if (msgIdList.Contains(msg.msgId))
+            {
+                return;
+            }
+
+            msgIdList.Add(msg.msgId);
+            if (msgIdList.Count > 990) msgIdList.RemoveAt(0);
+            
             try
             {
                 switch (msg.Method)
