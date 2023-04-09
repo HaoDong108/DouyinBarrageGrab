@@ -12,7 +12,9 @@
         关注消息 = 4,
         礼物消息 = 5,
         直播间统计 = 6,
-        粉丝团消息 = 7
+        粉丝团消息 = 7,
+        直播间分享消息 = 8,
+        下播 = 9
     }
 
     /// <summary>
@@ -24,6 +26,21 @@
         粉丝团升级 = 1,
         加入粉丝团 = 2
     }
+       
+    /// <summary>
+    /// 直播间分享目标
+    /// </summary>
+    public enum ShareType
+    {        
+        未知 = 0,
+        微信 = 1,
+        朋友圈 = 2,
+        微博 = 3,
+        QQ空间 = 4,
+        QQ = 5,
+        抖音好友 = 112
+    }
+
 
     /// <summary>
     /// 数据包装器
@@ -163,7 +180,7 @@
         /// <summary>
         /// 礼物数量(连续的)
         /// </summary>
-        public long GiftCount { get; set; }
+        public long RepeatCount { get; set; }
 
         /// <summary>
         /// 礼物数量(本次)
@@ -239,5 +256,16 @@
         /// 当前直播间人数
         /// </summary>
         public long CurrentCount { get; set; }
+    }
+    
+    /// <summary>
+    /// 直播间分享
+    /// </summary>
+    public class ShareMessage: Msg
+    {   
+        /// <summary>
+        /// 分享目标
+        /// </summary>
+        public ShareType ShareType { get; set; }
     }
 }
