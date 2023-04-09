@@ -127,7 +127,13 @@ namespace BarrageGrab
         private void Grab_OnGiftMessage(object sender, ProtoEntity.GiftMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
-            
+
+            //判断礼物重复
+            if (e.repeatEnd == 1)
+            {
+                return;
+            }
+
             var enty = new GiftMsg()
             {
                 MsgId = e.Common.msgId,

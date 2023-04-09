@@ -83,7 +83,7 @@ namespace BarrageGrab.Proxy
             if (e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket)
             {
                 e.DataReceived += WebSocket_DataReceived;
-            }                       
+            }
         }
 
         private async Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
