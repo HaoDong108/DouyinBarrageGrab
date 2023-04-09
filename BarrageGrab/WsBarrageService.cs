@@ -255,8 +255,8 @@ namespace BarrageGrab
                 User = GetUser(e.User)
             };
             //shareTarget: (112:好友),(1微信)(2朋友圈)(3微博)(5:qq)(4:qq空间),shareType: 1
-            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.DarkBlue, BarrageMsgType.直播间分享消息);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.直播间分享消息);
+            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.DarkBlue, BarrageMsgType.直播间分享);
+            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.直播间分享);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
         }
