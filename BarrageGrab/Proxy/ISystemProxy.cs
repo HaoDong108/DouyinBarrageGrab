@@ -1,5 +1,4 @@
 ﻿using System;
-using Fiddler;
 using System.Reflection;
 using System.Collections.Generic;
 using BarrageGrab.Proxy.ProxyEventArgs;
