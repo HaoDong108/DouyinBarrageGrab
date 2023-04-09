@@ -3,8 +3,8 @@
 ## ⛳近期更新
 
 2023-04-09 v2.6.3
-	 新增直播间下线消息，直播间分享消息类型。
-     [重要更新] 修复了礼物重复的问题 详见 [Issue #I6TFBV](https://gitee.com/haodong108/dy-barrage-grab/issues/I6TFBV)，并且现在一个弹幕消息对应一个礼物单位(假设有大佬连送500个小心心，则理论上会推送500次礼物消息)，原先的GiftCount更名为RepeatCount
+1. 新增直播间下线消息，直播间分享消息类型。
+2. [重要更新] 修复了礼物重复的问题 详见 [Issue #I6TFBV](https://gitee.com/haodong108/dy-barrage-grab/issues/I6TFBV)，并且现在一个弹幕消息对应一个礼物单位(假设有大佬连送500个小心心，则理论上会推送500次礼物消息)，原先的GiftCount更名为RepeatCount
 
 2023-04-01 v2.6.2(beta)
 
