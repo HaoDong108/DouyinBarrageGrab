@@ -105,35 +105,42 @@ namespace BarrageGrab.Proxy
 
             List<byte> messageData = new List<byte>();
 
-            foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
+            try
             {
-                if (frame.OpCode == WebsocketOpCode.Continuation)
+                foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
                 {
-                    messageData.AddRange(frame.Data.ToArray());
-                    continue;
-                }
-                else
-                {
-                    byte[] payload;
-                    if (messageData.Count > 0)
+                    if (frame.OpCode == WebsocketOpCode.Continuation)
                     {
                         messageData.AddRange(frame.Data.ToArray());
-                        payload = messageData.ToArray();
-                        messageData.Clear();
+                        continue;
                     }
                     else
                     {
-                        payload = frame.Data.ToArray();
-                    }
+                        byte[] payload;
+                        if (messageData.Count > 0)
+                        {
+                            messageData.AddRange(frame.Data.ToArray());
+                            payload = messageData.ToArray();
+                            messageData.Clear();
+                        }
+                        else
+                        {
+                            payload = frame.Data.ToArray();
+                        }
 
-                    base.FireWsEvent(new WsMessageEventArgs()
-                    {
-                        ProcessID = processid,
-                        HostName = hostname,
-                        Payload = payload,
-                        ProcessName = base.GetProcessName(processid)
-                    });
+                        base.FireWsEvent(new WsMessageEventArgs()
+                        {
+                            ProcessID = processid,
+                            HostName = hostname,
+                            Payload = payload,
+                            ProcessName = base.GetProcessName(processid)
+                        });
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("解析某个WebSocket包出错：" + ex.Message);
             }
 
             if (messageData.Count > 0)
