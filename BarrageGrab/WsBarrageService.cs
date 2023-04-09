@@ -71,7 +71,6 @@ namespace BarrageGrab
                     giftCountCache.Remove(key);
                     
                 });
-                Console.WriteLine($"删除了{timeOutKeys.Count}个,剩余{giftCountCache.Count}个");
             }
         }
 
@@ -146,7 +145,6 @@ namespace BarrageGrab
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
         }
-
        
         //礼物
         private void Grab_OnGiftMessage(object sender, ProtoEntity.GiftMessage e)
@@ -226,7 +224,7 @@ namespace BarrageGrab
             var enty = new Msg()
             {
                 MsgId = e.Common.msgId,
-                Content = $"{e.User.Nickname} 关注了主播 action:{e.Action},shareTarget:{e.shareTarget},shareType{e.shareType},原始消息:{e.Common.Describe}",
+                Content = $"{e.User.Nickname} 关注了主播",
                 RoomId = e.Common.roomId,
                 User = GetUser(e.User)
             };            
