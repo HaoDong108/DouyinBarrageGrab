@@ -178,15 +178,14 @@
         public string GiftName { get; set; }
 
         /// <summary>
+        /// 本次(增量)礼物数量
+        /// </summary>
+        public long GiftCount { get; set; }        
+
+        /// <summary>
         /// 礼物数量(连续的)
         /// </summary>
         public long RepeatCount { get; set; }
-
-        /// <summary>
-        /// 礼物数量(本次)
-        /// </summary>
-        public long GroupCount { get; set; }
-
 
         /// <summary>
         /// 抖币价格
