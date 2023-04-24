@@ -5,7 +5,7 @@
 
 2023-04-24 v2.6.5
 
-   1.新增了若干用户字段，包括用户shortid,粉丝数,关注数,主播关注状态,消费等级,并修正了粉丝团等级的错误赋值;礼物消息新增了GroupId用于帮助区分礼物连送分组;   字段详解见 [BarrageMessages.cs](./BarrageGrab/JsonEntity/BarrageMessages.cs)
+1. 新增了若干用户字段，包括用户shortid,粉丝数,关注数,主播关注状态,消费等级,并修正了粉丝团等级的错误赋值;礼物消息新增了GroupId用于帮助区分礼物连送分组;   字段详解见 [BarrageMessages.cs](./BarrageGrab/JsonEntity/BarrageMessages.cs)
 
 2023-04-10 v2.6.4
 
