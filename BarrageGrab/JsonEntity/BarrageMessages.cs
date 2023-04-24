@@ -115,11 +115,16 @@
     /// 用户弹幕信息
     /// </summary>
     public class MsgUser
-    {
+    {        
         /// <summary>
         /// 真实ID
         /// </summary>
         public long Id { get; set; }
+
+        /// <summary>
+        /// ShortId
+        /// </summary>
+        public long ShortId { get; set; }
 
         /// <summary>
         /// 自定义ID
@@ -132,9 +137,14 @@
         public string Nickname { get; set; }
 
         /// <summary>
-        /// 等级
+        /// 未知
         /// </summary>
         public int Level { get; set; }
+
+        /// <summary>
+        /// 支付等级
+        /// </summary>
+        public int PayLevel { get; set; }
 
         /// <summary>
         /// 性别 1男 2女
@@ -154,7 +164,23 @@
         /// <summary>
         /// 粉丝团信息
         /// </summary>
-        public FansClubInfo FansClub { get; set; }        
+        public FansClubInfo FansClub { get; set; }
+
+        /// <summary>
+        /// 粉丝数
+        /// </summary>
+        public long FollowerCount { get;  set; }
+
+        /// <summary>
+        /// 关注状态 0 未关注 1 已关注 2,不明
+        /// </summary>
+        public long FollowStatus { get;  set; }
+
+        /// <summary>
+        /// 关注数
+        /// </summary>
+        public long FollowingCount;
+
 
         public string GenderToString()
         {
@@ -176,6 +202,11 @@
         /// 礼物名称
         /// </summary>
         public string GiftName { get; set; }
+
+        /// <summary>
+        /// 礼物分组ID
+        /// </summary>
+        public long GroupId { get; set; }
 
         /// <summary>
         /// 本次(增量)礼物数量
@@ -244,6 +275,11 @@
         /// 粉丝团消息类型,升级1，加入2
         /// </summary>
         public int Type { get; set; }
+
+        /// <summary>
+        /// 粉丝团等级
+        /// </summary>
+        public int Level { get; set; }
     }
 
     /// <summary>

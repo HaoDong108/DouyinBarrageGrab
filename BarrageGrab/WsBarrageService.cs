@@ -85,12 +85,17 @@ namespace BarrageGrab
             MsgUser user = new MsgUser()
             {
                 DisplayId = data.displayId,
+                ShortId = data.shortId,
                 Gender = data.Gender,
                 Id = data.Id,
                 Level = data.Level,
+                PayLevel = (int)(data.payGrade?.Level??0),
                 Nickname = data.Nickname,
                 HeadImgUrl = data.avatarThumb.urlLists.FirstOrDefault() ?? "",
-                SecUid = data.sec_uid
+                SecUid = data.sec_uid,
+                FollowerCount = data.followInfo.followerCount,
+                FollowingCount = data.followInfo.followingCount,                
+                FollowStatus = data.followInfo.followStatus,
             };
             user.FansClub = new FansClubInfo()
             {
@@ -101,7 +106,7 @@ namespace BarrageGrab
             if (data.fansClub != null && data.fansClub.Data != null)
             {
                 user.FansClub.ClubName = data.fansClub.Data.clubName;
-                user.Level = data.fansClub.Data.Level;
+                user.FansClub.Level = data.fansClub.Data.Level;
             }
 
             return user;
@@ -116,9 +121,10 @@ namespace BarrageGrab
                 MsgId = e.Common.msgId,
                 Content = e.Content,
                 RoomId = e.Common.roomId,
-                Type = e.Type,
+                Type = e.Type,                
                 User = GetUser(e.User)
             };
+            enty.Level = enty.User.FansClub.Level;
             Print(enty.User.GenderToString() + "  " + enty.Content, ConsoleColor.Blue, BarrageMsgType.粉丝团消息);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.粉丝团消息);
             var json = JsonConvert.SerializeObject(pack);
@@ -208,11 +214,13 @@ namespace BarrageGrab
                 DiamondCount = e.Gift.diamondCount,
                 RepeatCount = currCount,
                 GiftCount = count,
+                GroupId = e.groupId,
                 GiftId = e.giftId,
                 GiftName = e.Gift.Name,
                 User = GetUser(e.User)
             };
-
+           
+            
             Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.Red, BarrageMsgType.礼物消息);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.礼物消息);
             var json = JsonConvert.SerializeObject(pack);
@@ -315,7 +323,14 @@ namespace BarrageGrab
                 RoomId = e.Common.roomId,
                 User = GetUser(e.User)
             };
+
+
             Print($"{enty.User.GenderToString()}  {enty.User.Nickname}: {enty.Content}", ConsoleColor.White, BarrageMsgType.弹幕消息);
+            if (e.User.followInfo.followStatus != 1 && e.User.followInfo.followStatus != 0 && e.User.followInfo.followStatus != 2)
+            {
+                Console.WriteLine(e.User.followInfo.followStatus);
+            }
+            
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.弹幕消息);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
