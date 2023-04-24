@@ -79,11 +79,15 @@ namespace BarrageGrab.Proxy
         /// <returns></returns>
         protected string GetProcessName(int processID)
         {
-            var process = Process.GetProcessById(processID);
-            if (process != null)
+            try
             {
-                return process.ProcessName;
+                var process = Process.GetProcessById(processID);
+                if (process != null)
+                {
+                    return process.ProcessName;
+                }
             }
+            catch (Exception ex){}            
             return $"<{processID}>";
         }
 
