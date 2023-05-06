@@ -1,5 +1,5 @@
 # 抖音弹幕监听器
-+ Github大佬请移步[Gitee](https://gitee.com/haodong108/dy-barrage-grab)，参与Issues讨论
++ Github大佬请移步[Gitee](https://gitee.com/haodong108/dy-barrage-grab)，参与Issues讨论，QQ讨论群:819927029
 
 ## ⛳近期更新
 
