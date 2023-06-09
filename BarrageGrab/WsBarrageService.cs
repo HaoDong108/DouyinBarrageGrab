@@ -362,13 +362,19 @@ namespace BarrageGrab
             }
         }
 
+        static int count = 0;
         private void Print(string msg, ConsoleColor color, BarrageMsgType bartype)
         {
             if (!Appsetting.PrintFilter.Any(a => a == bartype.GetHashCode())) return;
-
             if (Appsetting.PrintBarrage)
             {
+                if (++count > 1000)
+                {                    
+                    Console.Clear();
+                    Console.WriteLine("控制台已清理");
+                }
                 console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")} [{bartype.ToString()}] " + msg + "\n", color);
+                count = 0;
             }
         }
 
@@ -414,9 +420,12 @@ namespace BarrageGrab
         {
             foreach (var user in socketList)
             {
-                var socket = user.Value;
+                var socket = user.Value;                
                 socket.Socket.Send(msg);
             }
+            //删除掉线的套接字
+            var offlines = socketList.Where(w=>!w.Value.Socket.IsAvailable).Select(s=>s.Key).ToList();
+            offlines.ForEach(key => socketList.Remove(key));
         }
 
         /// <summary>
