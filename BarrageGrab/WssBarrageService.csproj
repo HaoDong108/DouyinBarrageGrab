@@ -108,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Appsetting.cs" />
+    <Compile Include="JsonEntity\Command.cs" />
     <Compile Include="Proxy\EventArgs\HttpResponseEventArgs.cs" />
     <Compile Include="Proxy\EventArgs\WsMessageEventArgs.cs" />
     <Compile Include="Proxy\ISystemProxy.cs" />

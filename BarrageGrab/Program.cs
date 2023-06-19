@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BarrageGrab
@@ -14,24 +15,26 @@ namespace BarrageGrab
         static WsBarrageService server = null;
         static void Main(string[] args)
         {
-            SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
-            Console.Title = "抖音弹幕监听推送";
+            SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭            
+            Console.Title = "抖音弹幕监听推送";            
+            DisableQuickEditMode();
+            bool exited = false;
             server = new WsBarrageService();
-            server.StartListen();
-
-            while (true)
+            server.StartListen();            
+            server.OnClose += (s, e) =>
             {
-                var input = Console.ReadKey();
-                switch (input.Key)
-                {
-                    case ConsoleKey.Escape: goto end; break;
-                }
-            }
+                //退出程序                
+                exited = true;
+            };
 
-        end:
-            server.Close();
-            Console.WriteLine("服务器已正常关闭，按任意键结束...");
-            Console.ReadKey();
+            while (!exited)
+            {                
+                Thread.Sleep(500);
+            }
+            Console.WriteLine("服务器已关闭...");
+
+            //退出程序,不显示 按任意键退出
+            Environment.Exit(0);            
         }
 
 
@@ -54,5 +57,34 @@ namespace BarrageGrab
             }
             return false;
         }
+
+
+        const int STD_INPUT_HANDLE = -10;
+        const uint ENABLE_QUICK_EDIT_MODE = 0x0040;
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern IntPtr GetStdHandle(int hConsoleHandle);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint mode);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint mode);
+
+        public static void EnableQuickEditMode()
+        {
+            IntPtr hStdin = GetStdHandle(STD_INPUT_HANDLE);
+            uint mode;
+            GetConsoleMode(hStdin, out mode);
+            mode |= ENABLE_QUICK_EDIT_MODE;
+            SetConsoleMode(hStdin, mode);
+        }
+
+        public static void DisableQuickEditMode()
+        {
+            IntPtr hStdin = GetStdHandle(STD_INPUT_HANDLE);
+            uint mode;
+            GetConsoleMode(hStdin, out mode);
+            mode &= ~ENABLE_QUICK_EDIT_MODE;
+            SetConsoleMode(hStdin, mode);
+        }
+
     }
 }

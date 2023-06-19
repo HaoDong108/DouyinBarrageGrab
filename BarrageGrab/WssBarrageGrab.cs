@@ -81,7 +81,7 @@ namespace BarrageGrab
 
         public void Dispose()
         {
-            proxy.Dispose();
+            proxy.Dispose();            
         }
 
         //域名过滤器

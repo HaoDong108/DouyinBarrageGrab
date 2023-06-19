@@ -31,6 +31,11 @@ namespace BarrageGrab
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Current;
         bool debug = false;
+        
+        /// <summary>
+        /// 服务关闭后触发
+        /// </summary>
+        public event EventHandler OnClose;
 
         public WsBarrageService()
         {
@@ -399,6 +404,22 @@ namespace BarrageGrab
                 socketList[clientUrl].Socket = socket;
             }
 
+            //接收指令
+            socket.OnMessage = (message) =>
+            {
+                try
+                {
+                    var cmdPack = JsonConvert.DeserializeObject<Command>(message);
+                    if (cmdPack == null) return;
+
+                    if (cmdPack.Cmd == CommandCode.Close)
+                    {
+                        this.Close();
+                    }
+                }
+                catch (Exception) {}
+            };
+
             socket.OnClose = () =>
             {
                 socketList.Remove(clientUrl);
@@ -440,7 +461,7 @@ namespace BarrageGrab
         }
 
         /// <summary>
-        /// 关闭服务器连接
+        /// 关闭服务器连接，并关闭系统代理
         /// </summary>
         public void Close()
         {
@@ -449,7 +470,7 @@ namespace BarrageGrab
             socketServer.Dispose();
             grab.Dispose();
 
-            console.WriteLine("服务器已关闭...");
+            this.OnClose?.Invoke(this, EventArgs.Empty);            
         }
 
         class UserState
