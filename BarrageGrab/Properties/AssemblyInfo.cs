@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("抖音弹幕监听")]
+[assembly: AssemblyTitle("抖音弹幕监听器")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("小白不圆")]
+[assembly: AssemblyCompany("小白不圆个人工作室")]
 [assembly: AssemblyProduct("抖音弹幕监听器")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
 //通过使用 "*"，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.6.8.0")]
-[assembly: AssemblyFileVersion("2.6.8.0")]
+[assembly: AssemblyVersion("2.6.7.0")]
+[assembly: AssemblyFileVersion("2.6.7.0")]
