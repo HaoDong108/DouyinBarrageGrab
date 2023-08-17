@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using BarrageGrab.JsonEntity;
-using BarrageGrab.ProtoEntity;
 using ColorConsole;
 using Fleck;
 using Newtonsoft.Json;
+using BarrageGrab.Modles;
 using Newtonsoft.Json.Linq;
-using static BarrageGrab.ProtoEntity.Image;
+using System.Net.Http;
+using Org.BouncyCastle.Asn1.Crmf;
+using System.IO.Compression;
+using System.IO;
+using BarrageGrab.Modles.JsonEntity;
+using BarrageGrab.Modles.ProtoEntity;
 
 namespace BarrageGrab
 {
@@ -19,7 +24,7 @@ namespace BarrageGrab
     /// <summary>
     /// 弹幕服务
     /// </summary>
-    internal class WsBarrageService
+    public class WsBarrageService
     {
         WebSocketServer socketServer;
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>();
@@ -30,8 +35,8 @@ namespace BarrageGrab
         ConsoleWriter console = new ConsoleWriter();
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Current;
-        bool debug = false;
-        
+        bool debug = false;        
+
         /// <summary>
         /// 服务关闭后触发
         /// </summary>
@@ -42,7 +47,7 @@ namespace BarrageGrab
 #if DEBUG
             debug = true;
 #endif
-            var socket = new WebSocketServer($"ws://127.0.0.1:{Appsetting.WsProt}");
+            var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
             socket.RestartAfterListenError = true;//异常重启
 
             dieout.Elapsed += Dieout_Elapsed;
@@ -81,11 +86,12 @@ namespace BarrageGrab
 
         private bool CheckRoomId(long roomid)
         {
-            return Appsetting.RoomIds.Length == 0 || Appsetting.RoomIds.Contains(roomid);
+            if (Appsetting.RoomIds.Length == 0) return true;
+            return Appsetting.RoomIds.Any(a => a == roomid);
         }
-
+        
         //解析用户
-        private MsgUser GetUser(ProtoEntity.User data)
+        private MsgUser GetUser(User data)
         {
             MsgUser user = new MsgUser()
             {
@@ -94,12 +100,12 @@ namespace BarrageGrab
                 Gender = data.Gender,
                 Id = data.Id,
                 Level = data.Level,
-                PayLevel = (int)(data.payGrade?.Level??0),
+                PayLevel = (int)(data.payGrade?.Level ?? 0),
                 Nickname = data.Nickname,
                 HeadImgUrl = data.avatarThumb.urlLists.FirstOrDefault() ?? "",
                 SecUid = data.sec_uid,
                 FollowerCount = data.followInfo.followerCount,
-                FollowingCount = data.followInfo.followingCount,                
+                FollowingCount = data.followInfo.followingCount,
                 FollowStatus = data.followInfo.followStatus,
             };
             user.FansClub = new FansClubInfo()
@@ -118,7 +124,7 @@ namespace BarrageGrab
         }
 
         //粉丝团
-        private void Grab_OnFansclubMessage(object sender, ProtoEntity.FansclubMessage e)
+        private void Grab_OnFansclubMessage(object sender, FansclubMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
             var enty = new FansclubMsg()
@@ -126,7 +132,7 @@ namespace BarrageGrab
                 MsgId = e.Common.msgId,
                 Content = e.Content,
                 RoomId = e.Common.roomId,
-                Type = e.Type,                
+                Type = e.Type,
                 User = GetUser(e.User)
             };
             enty.Level = enty.User.FansClub.Level;
@@ -137,7 +143,7 @@ namespace BarrageGrab
         }
 
         //统计消息
-        private void Grab_OnRoomUserSeqMessage(object sender, ProtoEntity.RoomUserSeqMessage e)
+        private void Grab_OnRoomUserSeqMessage(object sender, RoomUserSeqMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
             var enty = new UserSeqMsg()
@@ -158,7 +164,7 @@ namespace BarrageGrab
         }
 
         //礼物
-        private void Grab_OnGiftMessage(object sender, ProtoEntity.GiftMessage e)
+        private void Grab_OnGiftMessage(object sender, GiftMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
 
@@ -207,7 +213,7 @@ namespace BarrageGrab
             }
             //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
             if (backward) return;
-            
+
 
             var count = currCount - lastCount;
 
@@ -224,8 +230,8 @@ namespace BarrageGrab
                 GiftName = e.Gift.Name,
                 User = GetUser(e.User)
             };
-           
-            
+
+
             Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.Red, BarrageMsgType.礼物消息);
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.礼物消息);
             var json = JsonConvert.SerializeObject(pack);
@@ -233,7 +239,7 @@ namespace BarrageGrab
         }
 
         //关注
-        private void Grab_OnSocialMessage(object sender, ProtoEntity.SocialMessage e)
+        private void Grab_OnSocialMessage(object sender, SocialMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
             if (e.Action != 1) return;
@@ -252,7 +258,7 @@ namespace BarrageGrab
         }
 
         //直播间分享
-        private void Grab_OnShardMessage(object sender, ProtoEntity.SocialMessage e)
+        private void Grab_OnShardMessage(object sender, SocialMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
             if (e.Action != 3) return;
@@ -278,11 +284,11 @@ namespace BarrageGrab
         }
 
         //来了
-        private void Grab_OnMemberMessage(object sender, ProtoEntity.MemberMessage e)
+        private void Grab_OnMemberMessage(object sender, Modles.ProtoEntity.MemberMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
 
-            var enty = new JsonEntity.MemberMessage()
+            var enty = new Modles.JsonEntity.MemberMessage()
             {
                 MsgId = e.Common.msgId,
                 Content = $"{e.User.Nickname} 来了 直播间人数:{e.memberCount}",
@@ -297,7 +303,7 @@ namespace BarrageGrab
         }
 
         //点赞
-        private void Grab_OnLikeMessage(object sender, ProtoEntity.LikeMessage e)
+        private void Grab_OnLikeMessage(object sender, LikeMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
 
@@ -317,7 +323,7 @@ namespace BarrageGrab
         }
 
         //弹幕
-        private void Grab_OnChatMessage(object sender, ProtoEntity.ChatMessage e)
+        private void Grab_OnChatMessage(object sender, ChatMessage e)
         {
             if (!CheckRoomId(e.Common.roomId)) return;
 
@@ -335,7 +341,7 @@ namespace BarrageGrab
             {
                 Console.WriteLine(e.User.followInfo.followStatus);
             }
-            
+
             var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.弹幕消息);
             var json = JsonConvert.SerializeObject(pack);
             this.Broadcast(json);
@@ -374,7 +380,7 @@ namespace BarrageGrab
             if (Appsetting.PrintBarrage)
             {
                 if (++count > 1000)
-                {                    
+                {
                     Console.Clear();
                     Console.WriteLine("控制台已清理");
                 }
@@ -417,7 +423,7 @@ namespace BarrageGrab
                         this.Close();
                     }
                 }
-                catch (Exception) {}
+                catch (Exception) { }
             };
 
             socket.OnClose = () =>
@@ -441,11 +447,11 @@ namespace BarrageGrab
         {
             foreach (var user in socketList)
             {
-                var socket = user.Value;                
+                var socket = user.Value;
                 socket.Socket.Send(msg);
             }
             //删除掉线的套接字
-            var offlines = socketList.Where(w=>!w.Value.Socket.IsAvailable).Select(s=>s.Key).ToList();
+            var offlines = socketList.Where(w => !w.Value.Socket.IsAvailable).Select(s => s.Key).ToList();
             offlines.ForEach(key => socketList.Remove(key));
         }
 
@@ -470,7 +476,7 @@ namespace BarrageGrab
             socketServer.Dispose();
             grab.Dispose();
 
-            this.OnClose?.Invoke(this, EventArgs.Empty);            
+            this.OnClose?.Invoke(this, EventArgs.Empty);
         }
 
         class UserState
