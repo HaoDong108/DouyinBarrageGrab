@@ -30,6 +30,6 @@ namespace BarrageGrab.Proxy.ProxyEventArgs
         /// <summary>
         /// 域名
         /// </summary>
-        public string HostName { get; set; }
+        public string HostName { get; set; }        
     }
 }
