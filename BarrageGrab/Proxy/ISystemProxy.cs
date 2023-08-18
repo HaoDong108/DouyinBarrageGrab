@@ -9,18 +9,11 @@ namespace BarrageGrab.Proxy
     {
         event EventHandler<WsMessageEventArgs> OnWebSocketData;
 
-        event EventHandler<HttpResponseEventArgs> OnResponse;
-
-        /// <summary>
-        /// 域名过滤器
-        /// </summary>
-        Func<string, bool> HostNameFilter { get; set; }
+        event EventHandler<HttpResponseEventArgs> OnFetchResponse;
 
         /// <summary>
         /// 开始监听
         /// </summary>
         void Start();
-    }
-
-    
+    }    
 }

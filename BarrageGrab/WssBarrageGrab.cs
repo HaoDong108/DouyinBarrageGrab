@@ -5,11 +5,11 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BarrageGrab.ProtoEntity;
 using ProtoBuf;
 using ColorConsole;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
+using BarrageGrab.Modles.ProtoEntity;
 
 namespace BarrageGrab
 {
@@ -24,9 +24,6 @@ namespace BarrageGrab
         ConsoleWriter console = new ConsoleWriter();
         //解包成功的域名缓存
         List<string> succPackHostNames = new List<string>();
-
-        //已知的弹幕域名服务器
-        string[] wsHostNames = Appsetting.Current.HostNameFilter;
 
         /// <summary>
         /// 进入直播间
@@ -71,8 +68,8 @@ namespace BarrageGrab
         public WssBarrageGrab()
         {
             proxy.OnWebSocketData += Proxy_OnWebSocketData;
-            proxy.HostNameFilter = HostNameChecker;            
-        }
+            proxy.OnFetchResponse += Proxy_OnFetchResponse;
+        }        
 
         public void Start()
         {
@@ -81,19 +78,9 @@ namespace BarrageGrab
 
         public void Dispose()
         {
-            proxy.Dispose();            
+            proxy.Dispose();
         }
 
-        //域名过滤器
-        private bool HostNameChecker(string hostName)
-        {
-            if (!Appsetting.Current.FilterHostName) return true;
-            if (hostName.StartsWith("webcast")) return true;
-
-            if (wsHostNames.Any(a => a.ToLower() == hostName.ToLower())) return true;
-
-            return false;
-        }
 
         //gzip解压缩
         private byte[] Decompress(byte[] zippedData)
@@ -120,7 +107,8 @@ namespace BarrageGrab
             if (!appsetting.ProcessFilter.Contains(e.ProcessName)) return;
             var buff = e.Payload;
             if (buff.Length == 0) return;
-            if (buff[0] != 0x08) return;
+            //如果需要Gzip解压缩，但是开头字节不符合Gzip特征字节 则不处理
+            if (e.NeedDecompress && buff[0] != 0x08) return;
 
             try
             {
@@ -130,11 +118,10 @@ namespace BarrageGrab
                 //检测包格式
                 if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip")) return;
 
+                byte[] allBuff;
                 //解压gzip
-                var odata = enty.Payload;
-                var decomp = Decompress(odata);
-
-                var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(decomp));
+                allBuff = e.NeedDecompress ? Decompress(enty.Payload) : enty.Payload;
+                var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(allBuff));
 
                 if (!succPackHostNames.Contains(e.HostName))
                 {
@@ -146,16 +133,33 @@ namespace BarrageGrab
             catch (Exception) { }
         }
 
+        //http 数据处理
+        private void Proxy_OnFetchResponse(object sender, HttpResponseEventArgs e)
+        {
+            var payload = e.HttpClient.Response.Body;
+            var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
+
+            if (!succPackHostNames.Contains(e.HostName))
+            {
+                succPackHostNames.Add(e.HostName);
+                SaveHostNameCache();
+            }            
+            response.Messages.ForEach(f =>
+            {
+                DoMessage(f);
+            });
+        }        
+
         //用于缓存接收过的消息ID，判断是否重复接收
-        Dictionary<string,List<long>> msgDic = new Dictionary<string,List<long>>();        
+        Dictionary<string, List<long>> msgDic = new Dictionary<string, List<long>>();
 
         //发送事件
         private void DoMessage(Message msg)
-        {            
+        {
             List<long> msgIdList;
             if (msgDic.ContainsKey(msg.Method))
             {
-                msgIdList = msgDic[msg.Method];                
+                msgIdList = msgDic[msg.Method];
             }
             else
             {
@@ -169,7 +173,7 @@ namespace BarrageGrab
 
             msgIdList.Add(msg.msgId);
             if (msgIdList.Count > 300) msgIdList.RemoveAt(0);
-            
+
             try
             {
                 switch (msg.Method)
@@ -211,7 +215,7 @@ namespace BarrageGrab
                             {
                                 if (arg.giftId == 685)
                                 {
-                                    arg.Gift = new ProtoEntity.GiftStruct()
+                                    arg.Gift = new GiftStruct()
                                     {
                                         Id = arg.giftId,
                                         Name = "粉丝灯牌",
@@ -292,7 +296,7 @@ namespace BarrageGrab
                     File.Create(fullPath);
                 }
                 var text = File.ReadAllText(fullPath);
-                var currentHosts = text.Split('\n').Where(w => !string.IsNullOrWhiteSpace(w)).Select(s=>s.Trim().Trim('\r')).ToList();
+                var currentHosts = text.Split('\n').Where(w => !string.IsNullOrWhiteSpace(w)).Select(s => s.Trim().Trim('\r')).ToList();
                 var newHosts = succPackHostNames.Except(currentHosts).ToList();
                 //保存
                 if (newHosts.Count > 0)

@@ -4,14 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using BarrageGrab.Modles;
 using BarrageGrab.Proxy.ProxyEventArgs;
-using Microsoft.Win32;
+using ColorConsole;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
@@ -24,6 +21,14 @@ namespace BarrageGrab.Proxy
     {
         ProxyServer proxyServer = null;
         ExplicitProxyEndPoint explicitEndPoint = null;
+
+        const string SCRIPT_HOST = "lf-cdn-tos.bytescm.com";
+        const string LIVE_HOST = "live.douyin.com";
+        const string DOUYIN_HOST = "www.douyin.com";
+        const string USER_INFO_PATH = "/webcast/user/me/";
+        const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
+        static ConsoleWriter console = new ConsoleWriter();
+
 
         public TitaniumProxy()
         {
@@ -43,93 +48,218 @@ namespace BarrageGrab.Proxy
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
 
-            proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback; ;
+            proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
-            proxyServer.AfterResponse += ProxyServer_AfterResponse;
+            //proxyServer.AfterResponse += ProxyServer_AfterResponse;
+
 
             explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
-            explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;            
+            explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
         }
 
-        private Task ProxyServer_AfterResponse(object sender, SessionEventArgs e)
+
+        private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
+            string uri = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
             var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);            
+            var contentType = e.HttpClient.Response.ContentType ?? "";
 
-            this.FireOnResponse(new HttpResponseEventArgs()
+            //处理弹幕
+            await HookBarrage(e);
+
+            //处理JS注入
+            await HookPageAsync(e);
+
+            //处理脚本拦截修改
+            await HookScriptAsync(e);
+        }
+        
+        private async Task HookBarrage(SessionEventArgs e)
+        {
+            string uri = e.HttpClient.Request.RequestUri.ToString();
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+            var contentType = e.HttpClient.Response.ContentType ?? "";
+
+            //ws 方式
+            if (
+                e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
+                hostname.StartsWith("webcast")
+               )
             {
-                ProcessID = processid,
-                HostName = hostname,
-                ProcessName = base.GetProcessName(processid),
-                HttpClient = e.HttpClient
-            });
-
-            return Task.CompletedTask;
+                e.DataReceived += WebSocket_DataReceived;
+            }
+            //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
+            if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
+            {
+                var payload = await e.GetResponseBody();
+                base.FireOnFetchResponse(new HttpResponseEventArgs()
+                {
+                    HttpClient = e.HttpClient,
+                    ProcessID = processid,
+                    HostName = hostname,
+                    ProcessName = base.GetProcessName(processid),
+                });
+            }
         }
 
+        /// <summary>
+        /// 获取配置的注入的js
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        private string GetInjectScript(string name)
+        {
+            //获取exe所在目录路径            
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", "inject", name + ".js");
+            if (File.Exists(path))
+            {
+                return File.ReadAllText(path);
+            }
+            return null;
+        }
+
+        private async Task HookPageAsync(SessionEventArgs e)
+        {
+            string uri = e.HttpClient.Request.RequestUri.ToString();
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            string url = e.HttpClient.Request.Url;            
+            var urlNoQuery = url.Split('?')[0];
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+            var isLiveRoom = Regex.IsMatch(uri.Trim(), @".*:\/\/live.douyin\.com\/\d+");
+            var contentType = e.HttpClient.Response.ContentType ?? "";
+
+            //检测是否为dom页，用于脚本注入
+            if (contentType.Contains("text/html"))
+            {
+                //如果响应头含有 CSP(https://blog.csdn.net/qq_30436011/article/details/127485927 会阻止内嵌脚本执行) 则删除
+                var csp = e.HttpClient.Response.Headers.GetFirstHeader("Content-Security-Policy");
+                if (csp != null)
+                {
+                    e.HttpClient.Response.Headers.RemoveHeader("Content-Security-Policy");
+                }
+
+                //获取 content-type                
+                if (isLiveRoom)
+                {
+                    //获取直播页注入js
+                    string liveRoomInjectScript = GetInjectScript("livePage");
+
+                    //注入上下文变量;
+                    var scriptContext = $"const PROCESS_NAME = '{processName}';\n";
+                    liveRoomInjectScript = scriptContext + liveRoomInjectScript;
+
+                    if (!liveRoomInjectScript.IsNullOrWhiteSpace())
+                    {
+                        //利用 HtmlAgilityPack 在尾部注入script 标签
+                        var html = await e.GetResponseBodyAsString();
+                        try
+                        {
+                            var doc = new HtmlAgilityPack.HtmlDocument();
+                            doc.LoadHtml(html);
+                            //找到body标签,在尾部注入script标签
+                            var body = doc.DocumentNode.SelectSingleNode("//body");
+                            if (body != null)
+                            {
+                                var script = doc.CreateElement("script");
+                                script.InnerHtml = liveRoomInjectScript;
+                                body.AppendChild(script);
+                                var newHtml = doc.DocumentNode.OuterHtml;
+                                e.SetResponseBodyString(newHtml);
+                                console.WriteLine($"直播页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, $"直播页{url},用户脚本注入异常");
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task HookScriptAsync(SessionEventArgs e)
+        {
+            string uri = e.HttpClient.Request.RequestUri.ToString();
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            string url = e.HttpClient.Request.Url;
+            var urlNoQuery = url.Split('?')[0];
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+            var contentType = e.HttpClient.Response.ContentType ?? "";
+
+            //判断响应内容是否为js application/javascript
+            if (contentType != null &&
+                contentType.Trim().ToLower().Contains("application/javascript") &&
+                hostname == SCRIPT_HOST
+                && e.HttpClient.Response.StatusCode == 200
+                //这俩个进程不需要注入
+                && processName != "直播伴侣"
+                && processName != "douyin"
+                )
+            {
+                var js = await e.GetResponseBodyAsString();
+                //var reg2 = new Regex(@"if\(!N.DJ\(\)&&(?<variable>\S).current\)\{"); //版本1,已过时
+                //if(!(0,k.DJ)()&amp;&amp;_.current){
+
+                var reg2 = new Regex(@"if\s*\(\s*\!\s*(?<v1>[\s\S]+\s*\.\s*DJ\s*\))\s*\(\s*\)\s*&\s*&\s*(?<v2>\S)\s*.\s*current\s*\)\s*\{");
+                var match = reg2.Match(js);
+                if (match.Success)
+                {
+                    js = reg2.Replace(js, "if(!${v1}()&&${v2}.current){return;");
+                    e.SetResponseBodyString(js);
+                    console.WriteLine($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
+                    return;
+                }
+            }
+        }
+
+       
         private Task ProxyServer_ServerCertificateValidationCallback(object sender, CertificateValidationEventArgs e)
         {
             // set IsValid to true/false based on Certificate Errors
             if (e.SslPolicyErrors == SslPolicyErrors.None)
             {
                 e.IsValid = true;
-            }            
+            }
             return Task.CompletedTask;
-        }
-
-        private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
-        {
-            string uri = e.HttpClient.Request.RequestUri.ToString();
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            if (e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket)
-            {
-                e.DataReceived += WebSocket_DataReceived;
-            }
-
-            //判断响应内容是否为js application/javascript
-            if (e.HttpClient.Response.ContentType != null &&
-                e.HttpClient.Response.ContentType.Trim().ToLower().Contains("application/javascript") &&
-                hostname == "lf-cdn-tos.bytescm.com"
-                )
-            {
-                var js = await e.GetResponseBodyAsString();
-                
-                //修改js,绕过页面无操作检测
-                var reg1 = new Regex(@"start\(\)\{Dt\.enable\(\),this\.tracker&&this\.tracker\.enable\(\)\}");
-                var match = reg1.Match(js);
-                if (match.Success)
-                {
-                    js = reg1.Replace(js, "start(){return;Dt.enable(),this.tracker&&this.tracker.enable()}");
-                    e.SetResponseBodyString(js);
-                    return;
-                }
-
-                var reg2 = new Regex(@"if\(!N.DJ\(\)&&(?<variable>\S).current\)\{");
-                match = reg2.Match(js);
-                if (match.Success)
-                {
-                    js = reg2.Replace(js, "if(!N.DJ()&&${variable}.current){return;");
-                    e.SetResponseBodyString(js);
-                    return;
-                }
-            }
         }
 
         private async Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
         {
             string url = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
-            if (hostname == "lf-cdn-tos.bytescm.com")
+
+            //用于检测修改js脚本
+            if (hostname == SCRIPT_HOST)
             {
                 e.DecryptSsl = true;
                 return;
             }
-            
+
+            //用于采集当前用户信息数据，供本地调用
+            if (hostname == LIVE_HOST)
+            {
+                e.DecryptSsl = true;
+                return;
+            }
+
             if (!CheckHost(hostname))
             {
                 e.DecryptSsl = false;
             }
+        }
+
+        protected override bool CheckHost(string host)
+        {
+            host = host.Trim().ToLower();
+            var succ = base.CheckHost(host);
+            return succ || host == SCRIPT_HOST || host == LIVE_HOST;
         }
 
         private async void WebSocket_DataReceived(object sender, DataEventArgs e)
@@ -153,6 +283,7 @@ namespace BarrageGrab.Proxy
                     }
                     else
                     {
+                        //读取完毕
                         byte[] payload;
                         if (messageData.Count > 0)
                         {
@@ -194,7 +325,10 @@ namespace BarrageGrab.Proxy
         {
             proxyServer.Stop();
             proxyServer.Dispose();
-            CloseSystemProxy();
+            if (Appsetting.Current.UsedProxy)
+            {
+                CloseSystemProxy();
+            }
         }
 
         /// <summary>
@@ -202,9 +336,12 @@ namespace BarrageGrab.Proxy
         /// </summary>
         override public void Start()
         {
-            proxyServer.Start();
-            proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
-            proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
+            proxyServer.Start(Appsetting.Current.UsedProxy);
+            if (Appsetting.Current.UsedProxy)
+            {
+                proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
+                proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
+            }
         }
     }
 }

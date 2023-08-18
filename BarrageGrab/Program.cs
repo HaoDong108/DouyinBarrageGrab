@@ -1,48 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace BarrageGrab
 {
     public class Program
     {
-        private delegate bool ControlCtrlDelegate(int CtrlType);
-
-        static WsBarrageService server = null;
         static void Main(string[] args)
-        {
-            SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭            
-            Console.Title = "抖音弹幕监听推送";            
-            DisableQuickEditMode();
-            bool exited = false;
-            server = new WsBarrageService();
-            server.StartListen();            
-            server.OnClose += (s, e) =>
+        {            
+            if (CheckAlreadyRunning())
             {
-                //退出程序                
+                Console.WriteLine("已经有一个监听程序在运行，按任意键退出...");
+                Console.ReadKey();
+                return;
+            }
+
+            WinApi.SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
+            WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式            
+            Console.Title = "抖音弹幕监听推送";
+ 
+            bool exited = false;
+            AppRuntime.WssService.StartListen();
+            AppRuntime.WssService.OnClose += (s, e) =>
+            {
+                //退出程序
                 exited = true;
             };
 
             while (!exited)
-            {                
+            {
                 Thread.Sleep(500);
             }
-            Console.WriteLine("服务器已关闭...");
 
+            Console.WriteLine("服务器已关闭...");
+            
             //退出程序,不显示 按任意键退出
-            Environment.Exit(0);            
+            Environment.Exit(0);
         }
 
-
-        [DllImport("kernel32.dll")]
-        private static extern bool SetConsoleCtrlHandler(ControlCtrlDelegate HandlerRoutine, bool Add);
-        private static ControlCtrlDelegate cancelHandler = new ControlCtrlDelegate(HandlerRoutine);
-
-        public static bool HandlerRoutine(int CtrlType)
+        private static WinApi.ControlCtrlDelegate cancelHandler = new WinApi.ControlCtrlDelegate((CtrlType) =>
         {
             switch (CtrlType)
             {
@@ -52,39 +53,21 @@ namespace BarrageGrab
                     break;
                 case 2:
                     Console.WriteLine("2工具被强制关闭");//按控制台关闭按钮关闭
-                    server.Close();
+                    AppRuntime.WssService.Close();
                     break;
             }
             return false;
-        }
+        });
 
-
-        const int STD_INPUT_HANDLE = -10;
-        const uint ENABLE_QUICK_EDIT_MODE = 0x0040;
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr GetStdHandle(int hConsoleHandle);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint mode);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint mode);
-
-        public static void EnableQuickEditMode()
+        //检测程序是否多开
+        private static bool CheckAlreadyRunning()
         {
-            IntPtr hStdin = GetStdHandle(STD_INPUT_HANDLE);
-            uint mode;
-            GetConsoleMode(hStdin, out mode);
-            mode |= ENABLE_QUICK_EDIT_MODE;
-            SetConsoleMode(hStdin, mode);
+            const string mutexName = "DyBarrageGrab";           
+            // Try to create a new named mutex.
+            using (Mutex mutex = new Mutex(true, mutexName, out bool createdNew))
+            {
+                return !createdNew;
+            }
         }
-
-        public static void DisableQuickEditMode()
-        {
-            IntPtr hStdin = GetStdHandle(STD_INPUT_HANDLE);
-            uint mode;
-            GetConsoleMode(hStdin, out mode);
-            mode &= ~ENABLE_QUICK_EDIT_MODE;
-            SetConsoleMode(hStdin, mode);
-        }
-
     }
 }

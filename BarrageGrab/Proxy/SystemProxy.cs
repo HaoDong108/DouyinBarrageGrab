@@ -15,11 +15,6 @@ namespace BarrageGrab.Proxy
     internal abstract class SystemProxy : ISystemProxy
     {
         /// <summary>
-        /// 域名过滤器
-        /// </summary>
-        public Func<string, bool> HostNameFilter { get; set; }        
-
-        /// <summary>
         /// 接收到websocket消息事件
         /// </summary>
         public event EventHandler<WsMessageEventArgs> OnWebSocketData;
@@ -27,7 +22,7 @@ namespace BarrageGrab.Proxy
         /// <summary>
         /// 接收到http响应事件
         /// </summary>
-        public event EventHandler<HttpResponseEventArgs> OnResponse;
+        public event EventHandler<HttpResponseEventArgs> OnFetchResponse;
 
         /// <summary>
         /// 代理端口
@@ -45,13 +40,17 @@ namespace BarrageGrab.Proxy
         /// </summary>
         /// <param name="host"></param>
         /// <returns></returns>
-        protected bool CheckHost(string host)
-        {
-            var result = true;
+        protected virtual bool CheckHost(string host)
+        {            
+            host = host.Trim().ToLower();
 
-            if (HostNameFilter != null) return HostNameFilter(host);
+            if (!Appsetting.Current.FilterHostName) return true;
+            
+            if (host.StartsWith("webcast")) return true;
 
-            return result;
+            if (Appsetting.Current.HostNameFilter.Any(a => a.Trim().ToLower() == host)) return true;
+
+            return false;            
         }
 
         /// <summary>
@@ -64,12 +63,12 @@ namespace BarrageGrab.Proxy
         }
 
         /// <summary>
-        /// 触发http响应事件
+        /// 触发弹幕http弹幕事件
         /// </summary>
         /// <param name="args"></param>
-        protected void FireOnResponse(HttpResponseEventArgs args)
+        protected void FireOnFetchResponse(HttpResponseEventArgs args)
         {
-            OnResponse?.Invoke(this, args);
+            OnFetchResponse?.Invoke(this, args);
         }
 
         /// <summary>

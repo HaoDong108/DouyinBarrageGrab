@@ -1,19 +1,26 @@
-# 抖音弹幕监听器
-+ Github大佬请移步[Gitee](https://gitee.com/haodong108/dy-barrage-grab)，参与Issues讨论，QQ讨论群:819927029
+# 📺 抖音弹幕监听器
++ Github大佬请移步[Gitee](https://gitee.com/haodong108/dy-barrage-grab)，参与Issues讨论，QQ讨论群:819927029(进群前请Star支持一下，谢谢🔪)
 + 发行版下载地址在[这里](https://gitee.com/haodong108/dy-barrage-grab/releases)，别下成源码包了!!
 
 ## ⛳近期更新
+
+2023-08-17 v2.6.7
+
+1. [重要更新] 支持浏览器/客户端 http 弹幕监听，这也会解决原先版本因网络波动使抖音客户端弹幕获取方式降级，而获取不到弹幕导致必须刷新页面重新连接的问题。
+2. [重要更新] 原先的web/客户端 页面无操作检测逻辑因官方js变动而失效，本次更新修复且完善了该功能，现在会定时模拟全局按键、绕过js检测逻辑、置空Websocket.close 方法三重手段尽量避免断开连接。你也可以直接修改[直播页脚本](./BarrageGrab/Scripts/inject/livePage.js)而无需重新编译源码。
+3. ws连接现在默认监听在0.0.0.0地址，可以从其他客户端连接。
+4. 代理端口现在可选择不占用系统代理，便于某些用户直接使用浏览器代理获取弹幕(启动时携带参数，例如:"chrome.exe --proxy-server=127.0.0.1:8827"，也可以在浏览器快捷方式-目标 引号之后附加该参数)
 
 2023-06-19 v2.6.6
 
 1. 修复了控制台点击后阻塞程序的问题
 2. 通过篡改JS Response屏蔽了Web端定时操作检测，避免在读取web端弹幕时总被中断(本地测试通过，有问题请反馈)
-3. 添加了程序关闭指令，连接ws后可向服务端发送`{"code":1}`json数据包安全关闭程序和系统代理
+3. 添加了程序关闭指令，连接ws后可向服务端发送`{"Cmd":1}`json数据包安全关闭程序和系统代理
 4. 修复了客户端连接断开后未从套接字连接池删除，导致显示error的bug
 
 2023-04-24 v2.6.5
 
-1. 新增了若干用户字段，包括用户shortid,粉丝数,关注数,主播关注状态,消费等级,并修正了粉丝团等级的错误赋值;礼物消息新增了GroupId用于帮助区分礼物连送分组;   字段详解见 [BarrageMessages.cs](./BarrageGrab/JsonEntity/BarrageMessages.cs)
+1. 新增了若干用户字段，包括用户shortid,粉丝数,关注数,主播关注状态,消费等级,并修正了粉丝团等级的错误赋值;礼物消息新增了GroupId用于帮助区分礼物连送分组;   字段详解见 [BarrageMessages.cs](./BarrageGrab/Modles/JsonEntity/BarrageMessages.cs)
 
 2023-04-10 v2.6.4
 
@@ -44,55 +51,57 @@
 程序中有基本的配置可以过滤弹幕进程，弹幕数据通过Websocket服务推送，其他程序只需接入ws服务器就能接收到到弹幕数据消息
 
 ``` xml
-	<appSettings>
-		<!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
-		<add key="processFilter" value="直播伴侣,chrome,msedge,douyin"/>
-		<!--Websocket监听端口-->
-		<add key="wsListenPort" value="8888"/>
-		<!--在控制台输出弹幕-->
-		<add key="printBarrage" value="true"/>
-		<!--要在控制台打印的弹幕类型,可以用','隔开   all[全部]，1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]-->
-		<add key="printFilter" value="all"/>
-		<!--系统代理端口-->
-		<add key="proxyPort" value="8827"/>
-		<!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
-		<add key="filterHostName" value="true"/>
-		<!--已知的弹幕域名列表，用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
-		<add key="hostNameFilter" value="
-			webcast3-ws-web-hl.douyin.com,
-             webcast3-ws-web-lf.douyin.com,
-			webcast100-ws-web-lq.amemv.com,
-             frontier-im.douyin.com,            
-		"/>
-        <!--要进行过滤的房间ID,不填代表监听所有，多项使用','分隔，浏览器进入直播间 F12 控制台输入 'window.localStorage.playRoom' 即可快速看到房间ID (不是地址栏中的那个)，也可以通过推送的弹幕流数据中获取到房间ID -->
-		<add key="roomIds" value=""/>		
-	</appSettings>
+<appSettings>
+    <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
+    <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore" />
+    <!--Websocket监听端口-->
+    <add key="wsListenPort" value="8888" />
+    <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
+    <add key="listenAny" value="true" />
+    <!--系统代理端口-->
+    <add key="proxyPort" value="8827" />
+    <!--在控制台输出弹幕-->
+    <add key="printBarrage" value="true" />
+    <!--要在控制台打印的弹幕类型,可以用','隔开   all[全部]，1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]-->
+    <add key="printFilter" value="all" />
+    <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
+    <add key="usedProxy" value="true" />
+    <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
+    <add key="filterHostName" value="true" />
+    <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
+    <add key="hostNameFilter" value="" />
+    <!--要进行过滤的房间ID(这里的房间ID每次开播会不一样),不填代表监听所有，多项使用','分隔，浏览器进入直播间 F12 控制台输入 'window.localStorage.playRoom' 即可快速看到房间ID(不是地址栏中的那个) -->
+    <add key="roomIds" value="" />
+</appSettings>
 ```
-
-
-### <a id="tag2">关于域名白名单的问题</a>
-
-如果你在使用过程中发现有获取不到弹幕的问题，请将`filterHostName` 设置为 `false`后再次尝试，如果发现修改配置后能够成功获取，请在程序运行目录下找到"成功解包域名缓存.txt"文件，在里面找到新的域名并添加到 `hostNameFilter`中，然后重新修改`filterHostName`为`true`。除此之外，你可以提交 Issues 或者 Pull Request 到仓库，帮助提高程序健壮性。
 
 ### 推送数据格式
 
 弹幕数据由WebSocket服务进行分发，使用Json格式进行推送，见项目  [BarrageMessages.cs](./BarrageGrab/JsonEntity/BarrageMessages.cs)，如需调整请克隆项目后参照 [message.proto](./BarrageGrab/proto/message.proto) 进行源码修改调整，文件包含所有弹幕相关数据结构，可前往[ws在线测试](http://wstool.jackxiang.com/)网站，连接 ws://127.0.0.1:8888 进行测试
 
 ### 使用方法
-1. 配置要监听的进程名称，例如有些朋友可能用QQ浏览器或者360浏览器，可以在快捷方式上右键打开文件位置，一般exe文件的名称就是进程名
-2. 管理员身份启动本程序，第一次启动会提示安装自签名证书，程序启动后挂在后台不要关，不然再打开会监听不到正在进行中的直播弹幕。
-3. 打开浏览器进入任何直播间进行测试，没有问题再启动直播伴侣，<b>浏览器和直播伴侣同时打开时还是要注意进程过滤，不然弹幕会杂交</b>
+1. 管理员身份启动本程序，第一次启动会提示安装自签名证书，程序启动后挂在后台不要关，不然再打开会监听不到正在进行中的直播弹幕。
+2. 打开浏览器进入任何直播间进行测试，没有问题再启动直播伴侣，<b>浏览器和直播伴侣同时打开时还是要注意进程过滤，不然弹幕会杂交</b>
+
+### 启动后无法获取，排查清单
+
+1. 先判断自己的浏览器进程名称是否在配置文件列表中
+
+2. 程序启动后，检查系统代理有无正常打开，有可能修改注册表被其他杀毒软件拦截
+
+3. 检查程序是否以管理员身份启动
+
+4. 注意程序启动先后顺序(很重要)，必须保证在进入直播间之前监听程序已在运行
+
+5. 检查代理端口是否与其他端口冲突，可尝试修改
+
+6. 依旧不行？请前往[这里]([电脑 - 商品搜索 - 京东 (jd.com)](https://search.jd.com/Search?keyword=电脑))
+
+   
 
 ## 🖼️控制台截图
 
 [![控制台截图](https://s1.ax1x.com/2022/11/10/z9YYPU.png)](https://imgse.com/i/z9YYPU)
-
-
-
-## 🐳主要依赖项
-
-+ [Titanium.Web.Proxy](https://www.nuget.org/packages/Titanium.Web.Proxy)
-+ [Protobuf-net](https://www.nuget.org/packages/protobuf-net/)
 
 
 
@@ -110,7 +119,7 @@
 
 ## 📢鸣谢
 
-+ 请施舍一个 ⭐Start ，现在工具处于早期版本，及时订阅更新获得更佳的使用体验
++ 请施舍一个 ⭐Start ，现在工具处于早期版本，请及时订阅更新
 
   
 
