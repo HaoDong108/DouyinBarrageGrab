@@ -7,9 +7,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Sync to Gitee
-              uses: wearerequired/git-mirror-action@master
-              env:
-                  SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+              uses: zcong1993/actions-git-mirror@master
               with:
-                source-repo: https://github.com/HaoDong108/DouyinBarrageGrab.git
-                destination-repo: https://gitee.com/haodong108/dy-barrage-grab.git
+                dest-repo: https://gitee.com/haodong108/dy-barrage-grab.git
+                dest-token: ${{ secrets.GITEE_PRIVATE_KEY }}
+                repo-token: ${{ secrets.GITEE_TOKEN }}
