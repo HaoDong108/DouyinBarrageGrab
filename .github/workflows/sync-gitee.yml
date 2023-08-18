@@ -11,5 +11,5 @@ jobs:
               env:
                   SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
               with:
-                  source-repo:
-                  destination-repo:
+                source-repo: https://github.com/HaoDong108/DouyinBarrageGrab.git
+                destination-repo: https://gitee.com/haodong108/dy-barrage-grab.git
