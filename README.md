@@ -4,6 +4,12 @@
 
 ## ⛳近期更新
 
+2023-08-17 v2.6.8
+
+1. 添加了上游代理支持，现在可以将无关的请求转发到其他的代理地址！详见下方配置说明`upstreamProxy`
+2. 内部添加了webRoomid 的缓存映射，只要打开直播间地址即可缓存WebRoomId和Roomid的映射关系，`WebRoomId`现已添加至ws弹幕流数据中!，需要注意直播伴侣端提取的弹幕当前不会有该字段，除非在开播后打开浏览器访问一次你的直播间
+3. MsgPack 现在添加了进程名字段`ProcessName`
+
 2023-08-17 v2.6.7
 
 1. [重要更新] 支持浏览器/客户端 http 弹幕监听，这也会解决原先版本因网络波动使抖音客户端弹幕获取方式降级，而获取不到弹幕导致必须刷新页面重新连接的问题。
@@ -51,27 +57,30 @@
 程序中有基本的配置可以过滤弹幕进程，弹幕数据通过Websocket服务推送，其他程序只需接入ws服务器就能接收到到弹幕数据消息
 
 ``` xml
+<!--配置更改后重启才能生效-->
 <appSettings>
-    <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
-    <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore" />
-    <!--Websocket监听端口-->
-    <add key="wsListenPort" value="8888" />
-    <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
-    <add key="listenAny" value="true" />
-    <!--系统代理端口-->
-    <add key="proxyPort" value="8827" />
-    <!--在控制台输出弹幕-->
-    <add key="printBarrage" value="true" />
-    <!--要在控制台打印的弹幕类型,可以用','隔开   all[全部]，1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]-->
-    <add key="printFilter" value="all" />
-    <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
-    <add key="usedProxy" value="true" />
-    <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
-    <add key="filterHostName" value="true" />
-    <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
-    <add key="hostNameFilter" value="" />
-    <!--要进行过滤的房间ID(这里的房间ID每次开播会不一样),不填代表监听所有，多项使用','分隔，浏览器进入直播间 F12 控制台输入 'window.localStorage.playRoom' 即可快速看到房间ID(不是地址栏中的那个) -->
-    <add key="roomIds" value="" />
+  <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
+  <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore" />
+  <!--Websocket监听端口-->
+  <add key="wsListenPort" value="8888" />
+  <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
+  <add key="listenAny" value="true" />	  
+  <!--系统代理端口-->
+  <add key="proxyPort" value="8827" />
+  <!--上游代理地址，例如需要将其他无关请求转发到本机另外的代理工具中,例如:127.0.0.1:11223,不要带http://-->
+  <add key="upstreamProxy" value=""/>
+  <!--在控制台输出弹幕-->
+  <add key="printBarrage" value="true" />
+  <!--要在控制台打印的弹幕类型,可以用','隔开   all[全部]，1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]-->
+  <add key="printFilter" value="all" />
+  <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
+  <add key="usedProxy" value="true" />
+  <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
+  <add key="filterHostName" value="true" />
+  <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
+  <add key="hostNameFilter" value="" />
+  <!--要进行过滤的房间ID,不填代表监听所有，多项使用','分隔，浏览器进入直播间 F12 控制台输入 'window.localStorage.playRoom' 即可快速看到房间ID(不是地址栏中的那个) -->
+  <add key="roomIds" value="" />
 </appSettings>
 ```
 
@@ -126,3 +135,13 @@
 ## ⚖️免责声明
 
 + 本程序仅供学习参考，不得用于商业用途，不得用于恶意搜集他人直播间用户信息!
+
+## 🍻赞助支持
+
+开源不易，如果该程序能够帮助到你，你的支持将会是我保持迭代的动力🍻！
+
+
+<p>
+<img src="https://z1.ax1x.com/2023/09/24/pPTfZ2d.png" alt="微信支付" style="width:300px;height:350px;border-radius: 5px;" />
+<img src="https://z1.ax1x.com/2023/09/24/pPTfexA.jpg" alt="支付宝" style="width:300px;height:350px;border-radius: 5px;" />
+</p>

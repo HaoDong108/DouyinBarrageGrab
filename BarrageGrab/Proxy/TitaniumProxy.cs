@@ -21,6 +21,7 @@ namespace BarrageGrab.Proxy
     {
         ProxyServer proxyServer = null;
         ExplicitProxyEndPoint explicitEndPoint = null;
+        ExternalProxy upStreamProxy = null;
 
         const string SCRIPT_HOST = "lf-cdn-tos.bytescm.com";
         const string LIVE_HOST = "live.douyin.com";
@@ -28,7 +29,6 @@ namespace BarrageGrab.Proxy
         const string USER_INFO_PATH = "/webcast/user/me/";
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
         static ConsoleWriter console = new ConsoleWriter();
-
 
         public TitaniumProxy()
         {
@@ -48,6 +48,20 @@ namespace BarrageGrab.Proxy
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
 
+            //设置上游代理地址
+            var upstreamProxyAddr = Appsetting.Current.UpstreamProxy;
+            if (!upstreamProxyAddr.IsNullOrWhiteSpace())
+            {
+                upStreamProxy = new ExternalProxy()
+                {
+                    HostName = upstreamProxyAddr.Split(':')[0],
+                    Port = int.Parse(upstreamProxyAddr.Split(':')[1]),
+                    ProxyType = ExternalProxyType.Http
+                };
+                proxyServer.UpStreamHttpProxy = upStreamProxy;
+                proxyServer.UpStreamHttpsProxy = upStreamProxy;
+            }
+
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
             //proxyServer.AfterResponse += ProxyServer_AfterResponse;
@@ -57,7 +71,6 @@ namespace BarrageGrab.Proxy
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
         }
-
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
@@ -131,7 +144,7 @@ namespace BarrageGrab.Proxy
             var urlNoQuery = url.Split('?')[0];
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
-            var isLiveRoom = Regex.IsMatch(uri.Trim(), @".*:\/\/live.douyin\.com\/\d+");
+            var liveRoomMactch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/(\d+)");
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
             //检测是否为dom页，用于脚本注入
@@ -145,8 +158,9 @@ namespace BarrageGrab.Proxy
                 }
 
                 //获取 content-type                
-                if (isLiveRoom)
+                if (liveRoomMactch.Success)
                 {
+                    string webrid = liveRoomMactch.Groups[1].Value;
                     //获取直播页注入js
                     string liveRoomInjectScript = GetInjectScript("livePage");
 
@@ -158,6 +172,16 @@ namespace BarrageGrab.Proxy
                     {
                         //利用 HtmlAgilityPack 在尾部注入script 标签
                         var html = await e.GetResponseBodyAsString();
+
+                        (int code, string msg) = RoomInfo.TryParseRoomPageHtml(html, out var roominfo);
+                        if (code == 0)
+                        {
+                            Logger.LogInfo($"直播页{webrid}房间信息已采集到缓存");
+                            roominfo.WebRoomId = webrid;
+                            roominfo.LiveUrl = url;
+                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                        }
+
                         try
                         {
                             var doc = new HtmlAgilityPack.HtmlDocument();
@@ -218,7 +242,6 @@ namespace BarrageGrab.Proxy
                 }
             }
         }
-
        
         private Task ProxyServer_ServerCertificateValidationCallback(object sender, CertificateValidationEventArgs e)
         {

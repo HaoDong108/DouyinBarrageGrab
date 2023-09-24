@@ -22,12 +22,13 @@ namespace BarrageGrab
                 WsProt = int.Parse(AppSettings["wsListenPort"]);
                 PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
                 ProxyPort = int.Parse(AppSettings["proxyPort"]);
-                PrintFilter = Enum.GetValues(typeof(BarrageMsgType)).Cast<int>().ToArray();
+                PrintFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().ToArray();
                 FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
                 HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
                 RoomIds = AppSettings["roomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).Select(s => long.Parse(s)).ToArray();
                 UsedProxy = bool.Parse(AppSettings["usedProxy"].Trim());                
                 ListenAny = bool.Parse(AppSettings["listenAny"].Trim());
+                UpstreamProxy = AppSettings["upstreamProxy"].Trim();
 
                 var printFilter = AppSettings["printFilter"].Trim().ToLower();
                 if (printFilter != "all")
@@ -92,5 +93,10 @@ namespace BarrageGrab
         /// 域名白名单列表
         /// </summary>
         public string[] HostNameFilter { get; private set; } = new string[0];
+
+        /// <summary>
+        /// 上游代理地址
+        /// </summary>
+        public string UpstreamProxy { get; set; }
     }
 }

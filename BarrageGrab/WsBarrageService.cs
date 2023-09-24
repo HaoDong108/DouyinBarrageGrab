@@ -122,58 +122,104 @@ namespace BarrageGrab
             return user;
         }
 
-        //粉丝团
-        private void Grab_OnFansclubMessage(object sender, FansclubMessage e)
+        static int count = 0;
+        private void PrintMsg(Msg msg, PackMsgType barType)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            if (!Appsetting.PrintBarrage) return;
+
+            var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
+            var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId == 0 ? msg.RoomId : msg.WebRoomId)));
+            var text = $"{DateTime.Now.ToString("HH:mm:ss")} [{roomName}] [{barType}]";
+
+            if (msg.User != null)
+            {
+                text += $" [{msg.User?.GenderToString()}] ";
+            }
+
+            ConsoleColor color = ConsoleColor.White;
+            var append = msg.Content;
+            switch (barType)
+            {
+                case PackMsgType.弹幕消息: color = ConsoleColor.White; append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
+                case PackMsgType.点赞消息: color = ConsoleColor.Cyan; break;
+                case PackMsgType.进直播间: color = ConsoleColor.Green; break;
+                case PackMsgType.关注消息: color = ConsoleColor.Yellow; break;
+                case PackMsgType.礼物消息: color = ConsoleColor.Red; break;
+                case PackMsgType.直播间统计: color = ConsoleColor.Magenta; break;
+                case PackMsgType.粉丝团消息: color = ConsoleColor.Blue; break;
+                case PackMsgType.直播间分享: color = ConsoleColor.DarkBlue; break;
+                case PackMsgType.下播: color = ConsoleColor.DarkCyan; append = $"直播已结束"; break;
+                default: break;
+            }
+            text += append;
+
+            if (++count > 10000)
+            {
+                Console.Clear();
+                Console.WriteLine("控制台已清理");
+                count = 0;
+            }
+            console.WriteLine(text + "\n", color);
+        }
+
+        //粉丝团
+        private void Grab_OnFansclubMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<FansclubMessage> e)
+        {
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = new FansclubMsg()
             {
-                MsgId = e.Common.msgId,
-                Content = e.Content,
-                RoomId = e.Common.roomId,
-                Type = e.Type,
-                User = GetUser(e.User)
+                MsgId = msg.Common.msgId,
+                Content = msg.Content,
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                Type = msg.Type,
+                User = GetUser(msg.User)
             };
             enty.Level = enty.User.FansClub.Level;
-            Print(enty.User.GenderToString() + "  " + enty.Content, ConsoleColor.Blue, BarrageMsgType.粉丝团消息);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.粉丝团消息);
-            var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            
+            var msgType = PackMsgType.粉丝团消息;
+            PrintMsg(enty, msgType);
+            Broadcast(new BarrageMsgPack(enty.ToJson(), msgType,e.Process));
         }
 
         //统计消息
-        private void Grab_OnRoomUserSeqMessage(object sender, RoomUserSeqMessage e)
+        private void Grab_OnRoomUserSeqMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<RoomUserSeqMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = new UserSeqMsg()
             {
-                MsgId = e.Common.msgId,
-                OnlineUserCount = e.Total,
-                TotalUserCount = e.totalUser,
-                TotalUserCountStr = e.totalPvForAnchor,
-                OnlineUserCountStr = e.onlineUserForAnchor,
-                RoomId = e.Common.roomId,
-                Content = $"当前直播间人数 {e.onlineUserForAnchor}，累计直播间人数 {e.totalPvForAnchor}",
+                MsgId = msg.Common.msgId,
+                OnlineUserCount = msg.Total,
+                TotalUserCount = msg.totalUser,
+                TotalUserCountStr = msg.totalPvForAnchor,
+                OnlineUserCountStr = msg.onlineUserForAnchor,
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}",
                 User = null
             };
-            Print(enty.Content, ConsoleColor.Magenta, BarrageMsgType.直播间统计);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.直播间统计);
-            var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            
+            var msgType = PackMsgType.直播间统计;
+            PrintMsg(enty, msgType);
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            Broadcast(pack);
         }
 
         //礼物
-        private void Grab_OnGiftMessage(object sender, GiftMessage e)
+        private void Grab_OnGiftMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<GiftMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
 
-            var key = e.giftId + "-" + e.groupId.ToString();
+            var key = msg.Common.roomId + "-" + msg.giftId + "-" + msg.groupId.ToString();
 
             //判断礼物重复
-            if (e.repeatEnd == 1)
+            if (msg.repeatEnd == 1)
             {
                 //清除缓存中的key
-                if (e.groupId > 0 && giftCountCache.ContainsKey(key))
+                if (msg.groupId > 0 && giftCountCache.ContainsKey(key))
                 {
                     lock (giftCountCache)
                     {
@@ -184,7 +230,7 @@ namespace BarrageGrab
             }
 
             int lastCount = 0;
-            int currCount = (int)e.repeatCount;
+            int currCount = (int)msg.repeatCount;
             var backward = currCount <= lastCount;
             if (currCount <= 0) currCount = 1;
 
@@ -202,7 +248,7 @@ namespace BarrageGrab
             }
             else
             {
-                if (e.groupId > 0 && !backward)
+                if (msg.groupId > 0 && !backward)
                 {
                     lock (giftCountCache)
                     {
@@ -218,175 +264,190 @@ namespace BarrageGrab
 
             var enty = new GiftMsg()
             {
-                MsgId = e.Common.msgId,
-                RoomId = e.Common.roomId,
-                Content = $"{e.User.Nickname} 送出 {e.Gift.Name} x {currCount} 个，增量{count}个",
-                DiamondCount = e.Gift.diamondCount,
+                MsgId = msg.Common.msgId,
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name} x {currCount} 个，增量{count}个",
+                DiamondCount = msg.Gift.diamondCount,
                 RepeatCount = currCount,
                 GiftCount = count,
-                GroupId = e.groupId,
-                GiftId = e.giftId,
-                GiftName = e.Gift.Name,
-                User = GetUser(e.User)
+                GroupId = msg.groupId,
+                GiftId = msg.giftId,
+                GiftName = msg.Gift.Name,
+                User = GetUser(msg.User)
             };
-
-
-            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.Red, BarrageMsgType.礼物消息);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.礼物消息);
-            var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            
+            var msgType = PackMsgType.礼物消息;
+            PrintMsg(enty, msgType);
+            var pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
+            Broadcast(pack);
         }
 
         //关注
-        private void Grab_OnSocialMessage(object sender, SocialMessage e)
+        private void Grab_OnSocialMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<SocialMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
-            if (e.Action != 1) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
+            if (msg.Action != 1) return;
             var enty = new Msg()
             {
-                MsgId = e.Common.msgId,
-                Content = $"{e.User.Nickname} 关注了主播",
-                RoomId = e.Common.roomId,
-                User = GetUser(e.User)
+                MsgId = msg.Common.msgId,
+                Content = $"{msg.User.Nickname} 关注了主播",
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                User = GetUser(msg.User)
             };
-
-            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.Yellow, BarrageMsgType.关注消息);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.关注消息);
+            
+            var msgType = PackMsgType.关注消息;
+            PrintMsg(enty, msgType);
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            Broadcast(pack);
         }
 
         //直播间分享
-        private void Grab_OnShardMessage(object sender, SocialMessage e)
+        private void Grab_OnShardMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<SocialMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
-            if (e.Action != 3) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
+            if (msg.Action != 3) return;
             ShareType type = ShareType.未知;
-            if (Enum.IsDefined(type.GetType(), int.Parse(e.shareTarget)))
+            if (Enum.IsDefined(type.GetType(), int.Parse(msg.shareTarget)))
             {
-                type = (ShareType)int.Parse(e.shareTarget);
+                type = (ShareType)int.Parse(msg.shareTarget);
             }
 
             var enty = new ShareMessage()
             {
-                MsgId = e.Common.msgId,
-                Content = $"{e.User.Nickname} 分享了直播间到{type}",
-                RoomId = e.Common.roomId,
+                MsgId = msg.Common.msgId,
+                Content = $"{msg.User.Nickname} 分享了直播间到{type}",
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 ShareType = type,
-                User = GetUser(e.User)
+                User = GetUser(msg.User)
             };
-            //shareTarget: (112:好友),(1微信)(2朋友圈)(3微博)(5:qq)(4:qq空间),shareType: 1
-            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.DarkBlue, BarrageMsgType.直播间分享);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.直播间分享);
+            
+            var msgType = PackMsgType.直播间分享;
+            PrintMsg(enty, msgType);
+
+            //shareTarget: (112:好友),(1微信)(2朋友圈)(3微博)(5:qq)(4:qq空间),shareType: 1            
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            Broadcast(pack);
         }
 
         //来了
-        private void Grab_OnMemberMessage(object sender, Modles.ProtoEntity.MemberMessage e)
+        private void Grab_OnMemberMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<Modles.ProtoEntity.MemberMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
 
             var enty = new Modles.JsonEntity.MemberMessage()
             {
-                MsgId = e.Common.msgId,
-                Content = $"{e.User.Nickname} 来了 直播间人数:{e.memberCount}",
-                RoomId = e.Common.roomId,
-                CurrentCount = e.memberCount,
-                User = GetUser(e.User)
+                MsgId = msg.Common.msgId,
+                Content = $"{msg.User.Nickname} 来了 直播间人数:{msg.memberCount}",
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                CurrentCount = msg.memberCount,
+                User = GetUser(msg.User)
             };
-            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.Green, BarrageMsgType.进直播间);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.进直播间);
+            
+            var msgType = PackMsgType.进直播间;
+            PrintMsg(enty, msgType);
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            Broadcast(pack);
         }
 
         //点赞
-        private void Grab_OnLikeMessage(object sender, LikeMessage e)
+        private void Grab_OnLikeMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<LikeMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
 
             var enty = new LikeMsg()
             {
-                MsgId = e.Common.msgId,
-                Count = e.Count,
-                Content = $"{e.User.Nickname} 为主播点了{e.Count}个赞，总点赞{e.Total}",
-                RoomId = e.Common.roomId,
-                Total = e.Total,
-                User = GetUser(e.User)
+                MsgId = msg.Common.msgId,
+                Count = msg.Count,
+                Content = $"{msg.User.Nickname} 为主播点了{msg.Count}个赞，总点赞{msg.Total}",
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                Total = msg.Total,
+                User = GetUser(msg.User)
             };
-            Print($"{enty.User.GenderToString()}  {enty.Content}", ConsoleColor.Cyan, BarrageMsgType.点赞消息);
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.点赞消息);
-            var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            
+            var msgType = PackMsgType.点赞消息;
+            PrintMsg(enty, msgType);
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            Broadcast(pack);
         }
 
         //弹幕
-        private void Grab_OnChatMessage(object sender, ChatMessage e)
+        private void Grab_OnChatMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<ChatMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
 
             var enty = new Msg()
             {
-                MsgId = e.Common.msgId,
-                Content = e.Content,
-                RoomId = e.Common.roomId,
-                User = GetUser(e.User)
+                MsgId = msg.Common.msgId,
+                Content = msg.Content,
+                RoomId = msg.Common.roomId,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                User = GetUser(msg.User),
             };
+            
+            var msgType = PackMsgType.弹幕消息;
+            PrintMsg(enty, msgType);
 
-
-            Print($"{enty.User.GenderToString()}  {enty.User.Nickname}: {enty.Content}", ConsoleColor.White, BarrageMsgType.弹幕消息);
-            if (e.User.followInfo.followStatus != 1 && e.User.followInfo.followStatus != 0 && e.User.followInfo.followStatus != 2)
-            {
-                Console.WriteLine(e.User.followInfo.followStatus);
-            }
-
-            var pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.弹幕消息);
-            var json = JsonConvert.SerializeObject(pack);
-            this.Broadcast(json);
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            Broadcast(pack);
         }
 
         //直播间状态变更
-        private void Grab_OnControlMessage(object sender, ControlMessage e)
+        private void Grab_OnControlMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<ControlMessage> e)
         {
-            if (!CheckRoomId(e.Common.roomId)) return;
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
             BarrageMsgPack pack = null;
             //下播
-            if (e.Status == 3)
+            if (msg.Status == 3)
             {
                 var enty = new Msg()
                 {
-                    MsgId = e.Common.msgId,
+                    MsgId = msg.Common.msgId,
                     Content = "直播已结束",
-                    RoomId = e.Common.roomId,
+                    RoomId = msg.Common.roomId,
+                    WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                     User = null
                 };
-                Print($"直播已结束", ConsoleColor.DarkCyan, BarrageMsgType.下播);
-                pack = new BarrageMsgPack(JsonConvert.SerializeObject(enty), BarrageMsgType.下播);
+                
+                var msgType = PackMsgType.下播;
+                PrintMsg(enty, msgType);
+                pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.下播, e.Process);
             }
 
             if (pack != null)
             {
-                var json = JsonConvert.SerializeObject(pack);
-                this.Broadcast(json);
+                Broadcast(pack);
             }
         }
 
-        static int count = 0;
-        private void Print(string msg, ConsoleColor color, BarrageMsgType bartype)
-        {
-            if (!Appsetting.PrintFilter.Any(a => a == bartype.GetHashCode())) return;
-            if (Appsetting.PrintBarrage)
-            {
-                if (++count > 1000)
-                {
-                    Console.Clear();
-                    Console.WriteLine("控制台已清理");
-                }
-                console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")} [{bartype.ToString()}] " + msg + "\n", color);
-                count = 0;
-            }
-        }
+        //static int count = 0;
+        //private void Print(string msg, ConsoleColor color, PackMsgType bartype)
+        //{
+        //    if (!Appsetting.PrintFilter.Any(a => a == bartype.GetHashCode())) return;
+        //    if (Appsetting.PrintBarrage)
+        //    {
+        //        if (++count > 1000)
+        //        {
+        //            Console.Clear();
+        //            Console.WriteLine("控制台已清理");
+        //        }
+        //        console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")} [{bartype.ToString()}] " + msg + "\n", color);
+        //        count = 0;
+        //    }
+        //}
 
         private void Dieout_Elapsed(object sender, ElapsedEventArgs e)
         {
@@ -442,16 +503,24 @@ namespace BarrageGrab
         /// 广播消息
         /// </summary>
         /// <param name="msg"></param>
-        public void Broadcast(string msg)
+        public void Broadcast(BarrageMsgPack pack)
         {
-            foreach (var user in socketList)
+            if (pack == null) return;
+            var offLines = new List<string>();
+            foreach (var item in socketList)
             {
-                var socket = user.Value;
-                socket.Socket.Send(msg);
+                var state = item.Value;
+                if (item.Value.Socket.IsAvailable)
+                {                   
+                    state.Socket.Send(pack.ToJson());
+                }
+                else
+                {
+                    offLines.Add(item.Key);
+                }
             }
-            //删除掉线的套接字
-            var offlines = socketList.Where(w => !w.Value.Socket.IsAvailable).Select(s => s.Key).ToList();
-            offlines.ForEach(key => socketList.Remove(key));
+            //删除掉线的套接字        
+            offLines.ForEach(key => socketList.Remove(key));
         }
 
         /// <summary>

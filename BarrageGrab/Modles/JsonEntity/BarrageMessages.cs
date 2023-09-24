@@ -3,7 +3,7 @@
     /// <summary>
     /// 弹幕消息类型
     /// </summary>
-    public enum BarrageMsgType
+    public enum PackMsgType
     {
         无 = 0,
         弹幕消息 = 1,
@@ -50,7 +50,12 @@
         /// <summary>
         /// 消息类型
         /// </summary>
-        public BarrageMsgType Type { get; set; }
+        public PackMsgType Type { get; set; }      
+        
+        /// <summary>
+        /// 进程名
+        /// </summary>
+        public string ProcessName { get; set; }
 
         /// <summary>
         /// 消息对象
@@ -62,10 +67,11 @@
 
         }
 
-        public BarrageMsgPack(string data, BarrageMsgType type)
+        public BarrageMsgPack(string data, PackMsgType type,string processName)
         {
             Data = data;
             Type = type;
+            ProcessName = processName;
         }
     }
 
@@ -93,6 +99,11 @@
         /// 房间号
         /// </summary>
         public long RoomId { get; set; }
+
+        /// <summary>
+        /// web直播间ID
+        /// </summary>
+        public long WebRoomId { get; set; }
     }
 
     /// <summary>

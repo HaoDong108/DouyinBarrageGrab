@@ -28,48 +28,48 @@ namespace BarrageGrab
         /// <summary>
         /// 进入直播间
         /// </summary>
-        public event EventHandler<MemberMessage> OnMemberMessage;
+        public event EventHandler<RoomMessageEventArgs<MemberMessage>> OnMemberMessage;
 
         /// <summary>
         /// 关注
         /// </summary>
-        public event EventHandler<SocialMessage> OnSocialMessage;
+        public event EventHandler<RoomMessageEventArgs<SocialMessage>> OnSocialMessage;
 
         /// <summary>
         /// 聊天
         /// </summary>
-        public event EventHandler<ChatMessage> OnChatMessage;
+        public event EventHandler<RoomMessageEventArgs<ChatMessage>> OnChatMessage;
 
         /// <summary>
         /// 点赞
         /// </summary>
-        public event EventHandler<LikeMessage> OnLikeMessage;
+        public event EventHandler<RoomMessageEventArgs<LikeMessage>> OnLikeMessage;
 
         /// <summary>
         /// 礼物
         /// </summary>
-        public event EventHandler<GiftMessage> OnGiftMessage;
+        public event EventHandler<RoomMessageEventArgs<GiftMessage>> OnGiftMessage;
 
         /// <summary>
         /// 直播间统计
         /// </summary>
-        public event EventHandler<RoomUserSeqMessage> OnRoomUserSeqMessage;
+        public event EventHandler<RoomMessageEventArgs<RoomUserSeqMessage>> OnRoomUserSeqMessage;
 
         /// <summary>
         /// 直播间状态变更
         /// </summary>
-        public event EventHandler<ControlMessage> OnControlMessage;
+        public event EventHandler<RoomMessageEventArgs<ControlMessage>> OnControlMessage;
 
         /// <summary>
         /// 粉丝团消息
         /// </summary>
-        public event EventHandler<FansclubMessage> OnFansclubMessage;
+        public event EventHandler<RoomMessageEventArgs<FansclubMessage>> OnFansclubMessage;
 
         public WssBarrageGrab()
         {
             proxy.OnWebSocketData += Proxy_OnWebSocketData;
             proxy.OnFetchResponse += Proxy_OnFetchResponse;
-        }        
+        }
 
         public void Start()
         {
@@ -128,7 +128,7 @@ namespace BarrageGrab
                     succPackHostNames.Add(e.HostName);
                     SaveHostNameCache();
                 }
-                response.Messages.ForEach(f => DoMessage(f));
+                response.Messages.ForEach(f => DoMessage(f,e.ProcessName));
             }
             catch (Exception) { }
         }
@@ -143,18 +143,18 @@ namespace BarrageGrab
             {
                 succPackHostNames.Add(e.HostName);
                 SaveHostNameCache();
-            }            
+            }
             response.Messages.ForEach(f =>
             {
-                DoMessage(f);
+                DoMessage(f,e.ProcessName);
             });
-        }        
+        }
 
         //用于缓存接收过的消息ID，判断是否重复接收
         Dictionary<string, List<long>> msgDic = new Dictionary<string, List<long>>();
 
         //发送事件
-        private void DoMessage(Message msg)
+        private void DoMessage(Message msg,string processName)
         {
             List<long> msgIdList;
             if (msgDic.ContainsKey(msg.Method))
@@ -182,28 +182,28 @@ namespace BarrageGrab
                     case "WebcastMemberMessage":
                         {
                             var arg = Serializer.Deserialize<MemberMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnMemberMessage?.Invoke(this, arg);
+                            this.OnMemberMessage?.Invoke(this, new RoomMessageEventArgs<MemberMessage>(processName,arg));
                             break;
                         }
                     //关注
                     case "WebcastSocialMessage":
                         {
-                            var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnSocialMessage?.Invoke(this, arg);
+                            var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));                            
+                            this.OnSocialMessage?.Invoke(this, new RoomMessageEventArgs<SocialMessage>(processName, arg));
                             break;
                         }
                     //消息
                     case "WebcastChatMessage":
                         {
                             var arg = Serializer.Deserialize<ChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnChatMessage?.Invoke(this, arg);
+                            this.OnChatMessage?.Invoke(this, new RoomMessageEventArgs<ChatMessage>(processName, arg));
                             break;
                         }
                     //点赞
                     case "WebcastLikeMessage":
                         {
                             var arg = Serializer.Deserialize<LikeMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnLikeMessage?.Invoke(this, arg);
+                            this.OnLikeMessage?.Invoke(this, new RoomMessageEventArgs<LikeMessage>(processName, arg));
                             break;
                         }
                     //礼物
@@ -247,28 +247,28 @@ namespace BarrageGrab
                                 }
                             }
 
-                            this.OnGiftMessage?.Invoke(this, arg);
+                            this.OnGiftMessage?.Invoke(this, new RoomMessageEventArgs<GiftMessage>(processName, arg));
                             break;
                         }
                     //直播间统计
                     case "WebcastRoomUserSeqMessage":
                         {
                             var arg = Serializer.Deserialize<RoomUserSeqMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnRoomUserSeqMessage?.Invoke(this, arg);
+                            this.OnRoomUserSeqMessage?.Invoke(this, new RoomMessageEventArgs<RoomUserSeqMessage>(processName, arg));
                             break;
                         }
                     //直播间状态变更
                     case "WebcastControlMessage":
                         {
                             var arg = Serializer.Deserialize<ControlMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnControlMessage?.Invoke(this, arg);
+                            this.OnControlMessage?.Invoke(this, new RoomMessageEventArgs<ControlMessage>(processName, arg));
                             break;
                         }
                     //粉丝团消息
                     case "WebcastFansclubMessage":
                         {
                             var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnFansclubMessage?.Invoke(this, arg);
+                            this.OnFansclubMessage?.Invoke(this, new RoomMessageEventArgs<FansclubMessage>(processName, arg));
                             break;
                         }
                     default:
@@ -307,6 +307,32 @@ namespace BarrageGrab
             catch (Exception ex)
             {
                 Console.WriteLine("写入成功解包域名缓存失败：" + ex.Message, ConsoleColor.Red);
+            }
+        }
+
+
+        public class RoomMessageEventArgs<T> : EventArgs where T : class
+        {
+            /// <summary>
+            /// 进程名
+            /// </summary>
+            public string Process { get; set; }
+
+            /// <summary>
+            /// 消息
+            /// </summary>
+            public T Message { get; set; }
+
+
+            public RoomMessageEventArgs()
+            {
+                    
+            }
+
+            public RoomMessageEventArgs(string process, T data)
+            {
+                this.Process = process;
+                this.Message = data;
             }
         }
     }

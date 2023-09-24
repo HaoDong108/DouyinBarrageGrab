@@ -143,6 +143,7 @@
     <Compile Include="Modles\JsonEntity\Command.cs" />
     <Compile Include="Modles\ProtoEntity\Messages.cs" />
     <Compile Include="Modles\ProtoEntity\Wss.cs" />
+    <Compile Include="Modles\RoomInfo.cs" />
     <Compile Include="ObjectExtension.cs" />
     <Compile Include="Proxy\EventArgs\HttpResponseEventArgs.cs" />
     <Compile Include="Proxy\EventArgs\WsMessageEventArgs.cs" />
