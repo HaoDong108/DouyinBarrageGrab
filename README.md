@@ -142,6 +142,6 @@
 
 
 <p>
-<img src="https://z1.ax1x.com/2023/09/24/pPTfZ2d.png" alt="微信支付" style="width:300px;height:350px;border-radius: 5px;" />
-<img src="https://z1.ax1x.com/2023/09/24/pPTfexA.jpg" alt="支付宝" style="width:300px;height:350px;border-radius: 5px;" />
+<img src="https://z1.ax1x.com/2023/09/24/pPThr0P.png" alt="微信支付" style="width:300px;height:350px;border-radius: 5px;" />
+<img src="https://z1.ax1x.com/2023/09/24/pPThsTf.png" alt="支付宝" style="width:300px;height:350px;border-radius: 5px;" />
 </p>
