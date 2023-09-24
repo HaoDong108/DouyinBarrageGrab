@@ -136,12 +136,12 @@
 
 + 本程序仅供学习参考，不得用于商业用途，不得用于恶意搜集他人直播间用户信息!
 
-## 🍻赞助支持
+## 🍻支持一下?
 
-开源不易，如果该程序能够帮助到你，你的支持将会是我保持迭代的动力🍻！
+开源不易，你忍心白嫖是吧🤔~
 
 
 <p>
-<img src="https://z1.ax1x.com/2023/09/24/pPThr0P.png" alt="微信支付" style="width:300px;height:350px;border-radius: 5px;" />
-<img src="https://z1.ax1x.com/2023/09/24/pPThsTf.png" alt="支付宝" style="width:300px;height:350px;border-radius: 5px;" />
+<img src="https://z1.ax1x.com/2023/09/24/pPThr0P.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
+<img src="https://z1.ax1x.com/2023/09/24/pPThsTf.png" alt="支付宝" style="zoom:70%;border-radius: 5px;" />
 </p>
