@@ -140,8 +140,6 @@
 
 开源不易，你忍心白嫖是吧🤔~
 
-
 <p>
-<img src="https://z1.ax1x.com/2023/09/24/pPThr0P.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
-<img src="https://z1.ax1x.com/2023/09/24/pPThsTf.png" alt="支付宝" style="zoom:70%;border-radius: 5px;" />
+<img src="./imgs/微信.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
 </p>
