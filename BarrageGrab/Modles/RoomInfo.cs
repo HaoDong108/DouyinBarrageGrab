@@ -521,7 +521,7 @@ namespace BarrageGrab.Modles
             var match = roomDataReg.Match(html);
             if (!match.Success)
             {
-                Logger.LogError("在通过正则匹配直播页房间信息时失败，可能是官方做了升级");
+                //Logger.LogError("在通过正则匹配直播页房间信息时失败，可能是官方做了升级");
                 return (1, "未能匹配到房间信息");
             }
             var matchData = Regex.Unescape(match.Value);
