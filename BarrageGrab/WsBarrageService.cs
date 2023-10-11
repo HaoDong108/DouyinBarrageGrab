@@ -126,6 +126,7 @@ namespace BarrageGrab
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
             if (!Appsetting.PrintBarrage) return;
+            if (Appsetting.Current.PrintFilter.Any() && !Appsetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
 
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId == 0 ? msg.RoomId : msg.WebRoomId)));
