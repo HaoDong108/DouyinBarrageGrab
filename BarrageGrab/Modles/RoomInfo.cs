@@ -517,7 +517,11 @@ namespace BarrageGrab.Modles
             {
                 return (-1, "无效的页面数据");
             }
-            var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,""a:)\[.+?\](?=\\n?""\]\)[\s\n\r]*?<\/script>)");
+            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,""a:)\[.+?\](?=\\n?""\]\)[\s\n\r]*?<\/script>)");
+            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""0:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
+            var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""9:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
+            //字符串转义符号版本            
+
             var match = roomDataReg.Match(html);
             if (!match.Success)
             {
@@ -535,6 +539,11 @@ namespace BarrageGrab.Modles
             {
                 return (2, "匹配到的房间数据格式有错误");
             }
+            //var root = jsonObject["children"][3];
+            //var roomInfo = root["initialState"]["roomStore"]["roomInfo"];
+            //var odin = root["initialState"]["userStore"]["odin"];
+            //var room = roomInfo["room"];
+            //var roomOwner = roomInfo["anchor"];
 
             var roomInfo = jsonObject["state"]["roomStore"]["roomInfo"];
             var odin = jsonObject["state"]["userStore"]["odin"];

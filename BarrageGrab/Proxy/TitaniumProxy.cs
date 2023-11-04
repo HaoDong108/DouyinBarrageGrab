@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using BarrageGrab.Modles;
 using BarrageGrab.Proxy.ProxyEventArgs;
 using ColorConsole;
+using Org.BouncyCastle.Ocsp;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
@@ -77,7 +78,7 @@ namespace BarrageGrab.Proxy
             string uri = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
             var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);            
+            var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
             //处理弹幕
@@ -89,7 +90,7 @@ namespace BarrageGrab.Proxy
             //处理脚本拦截修改
             await HookScriptAsync(e);
         }
-        
+
         private async Task HookBarrage(SessionEventArgs e)
         {
             string uri = e.HttpClient.Request.RequestUri.ToString();
@@ -140,7 +141,7 @@ namespace BarrageGrab.Proxy
         {
             string uri = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
-            string url = e.HttpClient.Request.Url;            
+            string url = e.HttpClient.Request.Url;
             var urlNoQuery = url.Split('?')[0];
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
@@ -174,6 +175,7 @@ namespace BarrageGrab.Proxy
                         var html = await e.GetResponseBodyAsString();
 
                         (int code, string msg) = RoomInfo.TryParseRoomPageHtml(html, out var roominfo);
+
                         if (code == 0)
                         {
                             Logger.LogInfo($"直播页{webrid}房间信息已采集到缓存");
@@ -181,7 +183,24 @@ namespace BarrageGrab.Proxy
                             roominfo.LiveUrl = url;
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                         }
-
+                        else
+                        {
+                            roominfo = new RoomInfo();
+                            roominfo.WebRoomId = webrid;
+                            roominfo.LiveUrl = url;
+                            //正则匹配主播标题
+                            //<div class="st8eGKi4" data-e2e="live-room-nickname">和平精英小夜y</div>
+                            var match = Regex.Match(html, @"(?<=live-room-nickname""\>).+(?=<\/div>)");
+                            if (match.Success)
+                            {
+                                roominfo.Owner = new RoomInfo.RoomAnchor()
+                                {
+                                    Nickname = match.Value,
+                                    UserId = "-1"
+                                };
+                            }
+                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                        }
                         try
                         {
                             var doc = new HtmlAgilityPack.HtmlDocument();
@@ -242,7 +261,7 @@ namespace BarrageGrab.Proxy
                 }
             }
         }
-       
+
         private Task ProxyServer_ServerCertificateValidationCallback(object sender, CertificateValidationEventArgs e)
         {
             // set IsValid to true/false based on Certificate Errors

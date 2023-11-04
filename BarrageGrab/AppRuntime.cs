@@ -95,7 +95,7 @@ namespace BarrageGrab
             /// <returns></returns>
             public long GetCachedWebRoomid(string roomid)
             {
-                if (RoomInfoCache.TryGetValue(roomid, out var value)) return long.Parse(value.WebRoomId);
+                if (RoomInfoCache.TryGetValue(roomid, out var value)) return long.Parse(value.WebRoomId??"-1");
                 return -1;
             }
 
