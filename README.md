@@ -1,6 +1,7 @@
 # 📺 抖音弹幕监听器
 + Github大佬请移步[Gitee](https://gitee.com/haodong108/dy-barrage-grab)，参与Issues讨论，QQ讨论群:819927029(进群前请Star支持一下，谢谢🔪)
 + 发行版下载地址在[这里](https://gitee.com/haodong108/dy-barrage-grab/releases)，别下成源码包了!!
++ 💭 需要ws多直播间直连、拿直播间/用户主页信息、自动私信、自动发弹幕、获取榜单等功能的可以找我(QQ1083092844)提供一些技术支持(不支持匿名直播间)
 
 ## ⛳近期更新
 
