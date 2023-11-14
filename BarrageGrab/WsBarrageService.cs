@@ -19,7 +19,6 @@ using BarrageGrab.Modles.ProtoEntity;
 
 namespace BarrageGrab
 {
-
     /// <summary>
     /// 弹幕服务
     /// </summary>
@@ -34,7 +33,7 @@ namespace BarrageGrab
         ConsoleWriter console = new ConsoleWriter();
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Current;
-        bool debug = false;        
+        bool debug = false;
 
         /// <summary>
         /// 服务关闭后触发
@@ -88,7 +87,7 @@ namespace BarrageGrab
             if (Appsetting.RoomIds.Length == 0) return true;
             return Appsetting.RoomIds.Any(a => a == roomid);
         }
-        
+
         //解析用户
         private MsgUser GetUser(User data)
         {
@@ -178,10 +177,10 @@ namespace BarrageGrab
                 User = GetUser(msg.User)
             };
             enty.Level = enty.User.FansClub.Level;
-            
+
             var msgType = PackMsgType.粉丝团消息;
             PrintMsg(enty, msgType);
-            Broadcast(new BarrageMsgPack(enty.ToJson(), msgType,e.Process));
+            Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
         }
 
         //统计消息
@@ -201,7 +200,7 @@ namespace BarrageGrab
                 Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}",
                 User = null
             };
-            
+
             var msgType = PackMsgType.直播间统计;
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -277,7 +276,7 @@ namespace BarrageGrab
                 GiftName = msg.Gift.Name,
                 User = GetUser(msg.User)
             };
-            
+
             var msgType = PackMsgType.礼物消息;
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
@@ -298,7 +297,7 @@ namespace BarrageGrab
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 User = GetUser(msg.User)
             };
-            
+
             var msgType = PackMsgType.关注消息;
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -327,7 +326,7 @@ namespace BarrageGrab
                 ShareType = type,
                 User = GetUser(msg.User)
             };
-            
+
             var msgType = PackMsgType.直播间分享;
             PrintMsg(enty, msgType);
 
@@ -352,7 +351,7 @@ namespace BarrageGrab
                 CurrentCount = msg.memberCount,
                 User = GetUser(msg.User)
             };
-            
+
             var msgType = PackMsgType.进直播间;
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -376,7 +375,7 @@ namespace BarrageGrab
                 Total = msg.Total,
                 User = GetUser(msg.User)
             };
-            
+
             var msgType = PackMsgType.点赞消息;
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -397,7 +396,7 @@ namespace BarrageGrab
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 User = GetUser(msg.User),
             };
-            
+
             var msgType = PackMsgType.弹幕消息;
             PrintMsg(enty, msgType);
 
@@ -422,7 +421,7 @@ namespace BarrageGrab
                     WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                     User = null
                 };
-                
+
                 var msgType = PackMsgType.下播;
                 PrintMsg(enty, msgType);
                 pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.下播, e.Process);
@@ -479,9 +478,30 @@ namespace BarrageGrab
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
                     if (cmdPack == null) return;
 
-                    if (cmdPack.Cmd == CommandCode.Close)
+                    switch (cmdPack.Cmd)
                     {
-                        this.Close();
+                        case CommandCode.Close:
+                            this.Close();
+                            break;
+                        case CommandCode.EnableProxy:
+                            {
+                                var enable = (bool)cmdPack.Data;
+                                if (enable)
+                                    this.grab.Proxy.RegisterSystemProxy();
+                                else
+                                    this.grab.Proxy.CloseSystemProxy();
+                                break;
+                            }
+                        case CommandCode.DisplayConsole:
+                            {
+                                var display = (bool)cmdPack.Data;
+                                var hand = WinApi.FindWindow(null, Console.Title);
+                                if (hand != IntPtr.Zero)
+                                {
+                                    WinApi.ShowWindow(hand, display ? WinApi.CmdShow.SW_SHOW : WinApi.CmdShow.SW_HIDE);
+                                }
+                                break;
+                            }
                     }
                 }
                 catch (Exception) { }
@@ -512,7 +532,7 @@ namespace BarrageGrab
             {
                 var state = item.Value;
                 if (item.Value.Socket.IsAvailable)
-                {                   
+                {
                     state.Socket.Send(pack.ToJson());
                 }
                 else

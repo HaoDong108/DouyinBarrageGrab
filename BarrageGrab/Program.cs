@@ -23,6 +23,15 @@ namespace BarrageGrab
             WinApi.SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式            
             Console.Title = "抖音弹幕监听推送";
+
+            if(Appsetting.Current.HideConsole)
+            {
+                var hWnd = WinApi.FindWindow(null, Console.Title);
+                if (hWnd != IntPtr.Zero)
+                {
+                    WinApi.ShowWindow(hWnd,WinApi.CmdShow.SW_HIDE);
+                }                
+            }
  
             bool exited = false;
             AppRuntime.WssService.StartListen();

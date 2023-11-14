@@ -65,6 +65,11 @@ namespace BarrageGrab
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<FansclubMessage>> OnFansclubMessage;
 
+        /// <summary>
+        /// 代理
+        /// </summary>
+        public ISystemProxy Proxy { get => proxy; }
+
         public WssBarrageGrab()
         {
             proxy.OnWebSocketData += Proxy_OnWebSocketData;

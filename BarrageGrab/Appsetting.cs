@@ -29,6 +29,7 @@ namespace BarrageGrab
                 UsedProxy = bool.Parse(AppSettings["usedProxy"].Trim());                
                 ListenAny = bool.Parse(AppSettings["listenAny"].Trim());
                 UpstreamProxy = AppSettings["upstreamProxy"].Trim();
+                HideConsole = bool.Parse(AppSettings["hideConsole"].Trim());
 
                 var printFilter = AppSettings["printFilter"].Trim().ToLower();
                 if (printFilter != "all")
@@ -97,6 +98,11 @@ namespace BarrageGrab
         /// <summary>
         /// 上游代理地址
         /// </summary>
-        public string UpstreamProxy { get; set; }
+        public string UpstreamProxy { get; private set; }
+
+        /// <summary>
+        /// 隐藏控制台
+        /// </summary>
+        public bool HideConsole { get; private set; }
     }
 }

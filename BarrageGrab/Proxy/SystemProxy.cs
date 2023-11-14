@@ -91,9 +91,9 @@ namespace BarrageGrab.Proxy
         }
 
         /// <summary>
-        /// 注册系统代理
+        /// 注册为系统代理
         /// </summary>
-        protected void RegisterSystemProxy()
+        public void RegisterSystemProxy()
         {
             RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
             registry.SetValue("ProxyEnable", 1);
@@ -103,7 +103,7 @@ namespace BarrageGrab.Proxy
         /// <summary>
         /// 关闭系统代理
         /// </summary>
-        protected void CloseSystemProxy()
+        public void CloseSystemProxy()
         {
             RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
             registry.SetValue("ProxyEnable", 0);
