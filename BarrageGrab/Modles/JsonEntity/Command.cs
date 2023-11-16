@@ -16,7 +16,7 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 空指令
         /// </summary>
-        None = 0,
+        None = 0, 
 
         /// <summary>
         /// 安全关闭程序
