@@ -59,7 +59,7 @@ namespace BarrageGrab
             {
                 return dic[key];
             }
-            return default;
+            return default(TValue);
         }
 
         /// <summary>

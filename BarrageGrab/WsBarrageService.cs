@@ -40,6 +40,11 @@ namespace BarrageGrab
         /// </summary>
         public event EventHandler OnClose;
 
+        /// <summary>
+        /// WS服务器启动地址
+        /// </summary>
+        public string ServerLocation { get { return socketServer.Location; } }
+
         public WsBarrageService()
         {
 #if DEBUG
@@ -495,11 +500,7 @@ namespace BarrageGrab
                         case CommandCode.DisplayConsole:
                             {
                                 var display = (bool)cmdPack.Data;
-                                var hand = WinApi.FindWindow(null, Console.Title);
-                                if (hand != IntPtr.Zero)
-                                {
-                                    WinApi.ShowWindow(hand, display ? WinApi.CmdShow.SW_SHOW : WinApi.CmdShow.SW_HIDE);
-                                }
+                                AppRuntime.DisplayConsole(display);                                
                                 break;
                             }
                     }
@@ -550,9 +551,7 @@ namespace BarrageGrab
         public void StartListen()
         {
             this.grab.Start(); //启动代理
-            this.socketServer.Start(Listen);//启动监听
-            console.WriteLine($"{this.socketServer.Location} 弹幕服务已启动...", ConsoleColor.Green);
-            Console.Title = $"抖音弹幕监听推送 [{this.socketServer.Location}]";
+            this.socketServer.Start(Listen);//启动监听           
         }
 
         /// <summary>

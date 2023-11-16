@@ -68,7 +68,7 @@ namespace BarrageGrab
         /// <summary>
         /// 代理
         /// </summary>
-        public ISystemProxy Proxy { get => proxy; }
+        public ISystemProxy Proxy { get { return proxy; } }
 
         public WssBarrageGrab()
         {

@@ -27,7 +27,7 @@ namespace BarrageGrab.Proxy
         /// <summary>
         /// 代理端口
         /// </summary>
-        public int ProxyPort { get => Appsetting.Current.ProxyPort; }        
+        public int ProxyPort { get { return Appsetting.Current.ProxyPort; } }        
 
         public abstract void Dispose();
 

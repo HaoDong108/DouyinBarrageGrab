@@ -38,6 +38,30 @@ namespace BarrageGrab
         }
 
         /// <summary>
+        /// 隐藏/显示 控制台
+        /// </summary>
+        /// <param name="show"></param>
+        public static void DisplayConsole(bool show)
+        {
+            //var hWnd = WinApi.FindWindow(null, Console.Title);            
+            var hWnd = WinApi.GetConsoleWindow();
+            if (hWnd != IntPtr.Zero)
+            {
+                WinApi.ShowWindow(hWnd, show? WinApi.CmdShow.SW_SHOW:WinApi.CmdShow.SW_HIDE);
+            }
+        }
+
+        public static void DisplayConsoleByTitle(bool show)
+        {
+            var hWnd = WinApi.FindWindow(null, Console.Title);            
+            //var hWnd = WinApi.GetConsoleWindow();
+            if (hWnd != IntPtr.Zero)
+            {
+                WinApi.ShowWindow(hWnd, show ? WinApi.CmdShow.SW_SHOW : WinApi.CmdShow.SW_HIDE);
+            }
+        }
+
+        /// <summary>
         /// 房间缓存管理器
         /// </summary>
         public class RoomCacheManager
@@ -95,7 +119,8 @@ namespace BarrageGrab
             /// <returns></returns>
             public long GetCachedWebRoomid(string roomid)
             {
-                if (RoomInfoCache.TryGetValue(roomid, out var value)) return long.Parse(value.WebRoomId??"-1");
+                RoomInfo value;
+                if (RoomInfoCache.TryGetValue(roomid,out value)) return long.Parse(value.WebRoomId??"-1");
                 return -1;
             }
 
@@ -106,7 +131,8 @@ namespace BarrageGrab
             /// <returns></returns>
             public RoomInfo GetCachedWebRoomInfo(string roomid)
             {
-                if (RoomInfoCache.TryGetValue(roomid, out var value)) return value;
+                RoomInfo value;
+                if (RoomInfoCache.TryGetValue(roomid, out value)) return value;
                 return null;
             }
         }

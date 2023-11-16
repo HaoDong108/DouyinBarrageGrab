@@ -37,6 +37,9 @@ namespace BarrageGrab
         [DllImport("User32.dll", EntryPoint = "ShowWindow")]
         public static extern bool ShowWindow(IntPtr hWnd, CmdShow nCmdShow);
 
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr GetConsoleWindow();
+
 
 
         /// <summary>

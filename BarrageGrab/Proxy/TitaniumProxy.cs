@@ -173,8 +173,10 @@ namespace BarrageGrab.Proxy
                     {
                         //利用 HtmlAgilityPack 在尾部注入script 标签
                         var html = await e.GetResponseBodyAsString();
-
-                        (int code, string msg) = RoomInfo.TryParseRoomPageHtml(html, out var roominfo);
+                        RoomInfo roominfo;
+                        var tup = RoomInfo.TryParseRoomPageHtml(html, out roominfo);
+                        int code = tup.Item1;
+                        string msg = tup.Item2;
 
                         if (code == 0)
                         {

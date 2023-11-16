@@ -23,18 +23,17 @@ namespace BarrageGrab
             WinApi.SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式            
             Console.Title = "抖音弹幕监听推送";
+            AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);
 
-            if(Appsetting.Current.HideConsole)
-            {
-                var hWnd = WinApi.FindWindow(null, Console.Title);
-                if (hWnd != IntPtr.Zero)
-                {
-                    WinApi.ShowWindow(hWnd,WinApi.CmdShow.SW_HIDE);
-                }                
-            }
- 
             bool exited = false;
             AppRuntime.WssService.StartListen();
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{AppRuntime.WssService.ServerLocation} 弹幕服务已启动...");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Title = $"抖音弹幕监听推送 [{AppRuntime.WssService.ServerLocation}]";
+            
+
             AppRuntime.WssService.OnClose += (s, e) =>
             {
                 //退出程序
@@ -71,9 +70,10 @@ namespace BarrageGrab
         //检测程序是否多开
         private static bool CheckAlreadyRunning()
         {
-            const string mutexName = "DyBarrageGrab";           
+            const string mutexName = "DyBarrageGrab";
             // Try to create a new named mutex.
-            using (Mutex mutex = new Mutex(true, mutexName, out bool createdNew))
+            bool createdNew;
+            using (Mutex mutex = new Mutex(true, mutexName, out createdNew))
             {
                 return !createdNew;
             }

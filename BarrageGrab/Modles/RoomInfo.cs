@@ -510,12 +510,12 @@ namespace BarrageGrab.Modles
         /// <param name="html"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static (int, string) TryParseRoomPageHtml(string html, out RoomInfo result)
+        public static Tuple<int,string> TryParseRoomPageHtml(string html, out RoomInfo result)
         {
             result = null;
             if (html.IsNullOrWhiteSpace())
             {
-                return (-1, "无效的页面数据");
+                return Tuple.Create(-1, "无效的页面数据");
             }
             //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,""a:)\[.+?\](?=\\n?""\]\)[\s\n\r]*?<\/script>)");
             //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""0:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
@@ -526,7 +526,7 @@ namespace BarrageGrab.Modles
             if (!match.Success)
             {
                 //Logger.LogError("在通过正则匹配直播页房间信息时失败，可能是官方做了升级");
-                return (1, "未能匹配到房间信息");
+                return Tuple.Create(1, "未能匹配到房间信息");
             }
             var matchData = Regex.Unescape(match.Value);
 
@@ -537,7 +537,7 @@ namespace BarrageGrab.Modles
             }
             catch (Exception ex)
             {
-                return (2, "匹配到的房间数据格式有错误");
+                return Tuple.Create(2, "匹配到的房间数据格式有错误");
             }
             //var root = jsonObject["children"][3];
             //var roomInfo = root["initialState"]["roomStore"]["roomInfo"];
@@ -552,7 +552,7 @@ namespace BarrageGrab.Modles
 
             if (room == null)
             {
-                return (3, "房间信息为空，获取失败");
+                return Tuple.Create(3, "房间信息为空，获取失败");
             }
 
             result = new RoomInfo();
@@ -579,7 +579,7 @@ namespace BarrageGrab.Modles
                     FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
                 };
             }            
-            return (0, "succ");
+            return Tuple.Create(0, "succ");
         }
     }
 }

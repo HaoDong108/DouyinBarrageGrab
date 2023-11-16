@@ -12,7 +12,7 @@ namespace BarrageGrab
     {
         private static readonly Appsetting ins = new Appsetting();
 
-        public static Appsetting Current { get => ins; }
+        public static Appsetting Current { get { return ins; } }
 
         public Appsetting()
         {
