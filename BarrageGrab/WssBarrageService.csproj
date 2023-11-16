@@ -145,7 +145,6 @@
     <Compile Include="FormView.Designer.cs">
       <DependentUpon>FormView.cs</DependentUpon>
     </Compile>
-    <Compile Include="JsonEntity\Command.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Modles\BusinessExecption.cs" />
     <Compile Include="Modles\JsonEntity\BarrageMessages.cs" />
@@ -157,7 +156,6 @@
     <Compile Include="Proxy\EventArgs\HttpResponseEventArgs.cs" />
     <Compile Include="Proxy\EventArgs\WsMessageEventArgs.cs" />
     <Compile Include="Proxy\ISystemProxy.cs" />
-    <Compile Include="JsonEntity\BarrageMessages.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Proxy\SystemProxy.cs" />
     <Compile Include="Proxy\TitaniumProxy.cs" />
