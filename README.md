@@ -8,51 +8,7 @@
 1. 修复了因抖音版本升级导致的WebRoomId获取不到的问题，并更近了正则表达式尽量兼容后续的变更
 2. 添加了winfrom窗体，功能有限，默认隐藏
 3. 支持了控制台隐藏，推送器弹幕类型过滤，日志弹幕类型过滤，弹幕文件日志  (见配置文件)
-4. 支持了更多的ws命令:
-  ```c#
-    /*
-     * 例如发送 {"Cmd":1,"Data":true} 到ws连接地址 关闭程序
-     * 前往 http://wstool.jackxiang.com/ 在线ws测试
-     */
-
-    public enum CommandCode
-    {
-        /// <summary>
-        /// 空指令
-        /// </summary>
-        None = 0, 
-
-        /// <summary>
-        /// 安全关闭程序
-        /// </summary>
-        Close = 1,
-
-        /// <summary>
-        /// 启用系统代理 Data:bool
-        /// </summary>
-        EnableProxy = 2,
-
-        /// <summary>
-        /// 是否显示控制台 Data:bool
-        /// </summary>
-        DisplayConsole = 3,
-    }
-
-    
-    public class Command
-    {
-        /// <summary>
-        /// 指令标识
-        /// </summary>
-        public CommandCode Cmd { get; set; }
-
-        /// <summary>
-        /// 附加数据
-        /// </summary>
-        public object Data { get; set; }
-    }
-
-  ```
+4. 支持了更多的ws命令，见 [Command.cs](./BarrageGrab/Modles/JsonEntity/Command.cs)
 
 2023-11-04 v2.6.9
 
