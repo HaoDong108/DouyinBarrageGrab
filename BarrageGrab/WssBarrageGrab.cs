@@ -280,7 +280,7 @@ namespace BarrageGrab
                         break;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return;
             }

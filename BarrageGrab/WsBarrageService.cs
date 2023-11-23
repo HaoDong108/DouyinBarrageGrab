@@ -16,6 +16,7 @@ using System.IO.Compression;
 using System.IO;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
+using System.Drawing;
 
 namespace BarrageGrab
 {
@@ -23,7 +24,7 @@ namespace BarrageGrab
     /// 弹幕服务
     /// </summary>
     public class WsBarrageService
-    {
+    {       
         WebSocketServer socketServer;
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>();
         //礼物计数缓存
@@ -44,6 +45,16 @@ namespace BarrageGrab
         /// WS服务器启动地址
         /// </summary>
         public string ServerLocation { get { return socketServer.Location; } }
+
+        /// <summary>
+        /// 数据内核
+        /// </summary>
+        public WssBarrageGrab Grab { get { return grab; } }
+
+        /// <summary>
+        /// 控制台打印事件
+        /// </summary>
+        public event EventHandler<PrintEventArgs> OnPrint;
 
         public WsBarrageService()
         {
@@ -128,10 +139,7 @@ namespace BarrageGrab
 
         static int count = 0;
         private void PrintMsg(Msg msg, PackMsgType barType)
-        {
-            if (!Appsetting.PrintBarrage) return;
-            if (Appsetting.Current.PrintFilter.Any() && !Appsetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
-
+        {           
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId == 0 ? msg.RoomId : msg.WebRoomId)));
             var text = $"{DateTime.Now.ToString("HH:mm:ss")} [{roomName}] [{barType}]";
@@ -141,22 +149,31 @@ namespace BarrageGrab
                 text += $" [{msg.User?.GenderToString()}] ";
             }
 
-            ConsoleColor color = ConsoleColor.White;
+            ConsoleColor color = Appsetting.Current.ColorMap[barType].Item1;
             var append = msg.Content;
             switch (barType)
             {
-                case PackMsgType.弹幕消息: color = ConsoleColor.White; append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
-                case PackMsgType.点赞消息: color = ConsoleColor.Cyan; break;
-                case PackMsgType.进直播间: color = ConsoleColor.Green; break;
-                case PackMsgType.关注消息: color = ConsoleColor.Yellow; break;
-                case PackMsgType.礼物消息: color = ConsoleColor.Red; break;
-                case PackMsgType.直播间统计: color = ConsoleColor.Magenta; break;
-                case PackMsgType.粉丝团消息: color = ConsoleColor.Blue; break;
-                case PackMsgType.直播间分享: color = ConsoleColor.DarkBlue; break;
-                case PackMsgType.下播: color = ConsoleColor.DarkCyan; append = $"直播已结束"; break;
+                case PackMsgType.弹幕消息:append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
+                case PackMsgType.下播:append = $"直播已结束"; break;
                 default: break;
             }
+            
             text += append;
+
+            if (Appsetting.Current.BarrageLog)
+            {
+                Logger.LogBarrage(barType, msg);
+            }
+
+            if (!Appsetting.PrintBarrage) return;
+            if (Appsetting.Current.PrintFilter.Any() && !Appsetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
+
+            OnPrint?.Invoke(this, new PrintEventArgs()
+            {
+                Color = color,
+                Message = text,
+                MsgType = barType
+            });
 
             if (++count > 10000)
             {
@@ -164,7 +181,7 @@ namespace BarrageGrab
                 Console.WriteLine("控制台已清理");
                 count = 0;
             }
-            console.WriteLine(text + "\n", color);
+            console.WriteLine(text + "\n", color);            
         }
 
         //粉丝团
@@ -528,6 +545,8 @@ namespace BarrageGrab
         public void Broadcast(BarrageMsgPack pack)
         {
             if (pack == null) return;
+            if (Appsetting.Current.PushFilter.Any() && !Appsetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
+
             var offLines = new List<string>();
             foreach (var item in socketList)
             {
@@ -587,6 +606,15 @@ namespace BarrageGrab
             {
                 Socket = socket;
             }
+        }
+
+        public class PrintEventArgs : EventArgs
+        {
+            public string Message { get; set; }
+
+            public ConsoleColor Color { get; set; }            
+
+            public PackMsgType MsgType { get; set; }
         }
     }
 }

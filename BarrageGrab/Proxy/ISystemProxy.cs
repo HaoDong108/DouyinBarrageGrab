@@ -11,6 +11,23 @@ namespace BarrageGrab.Proxy
 
         event EventHandler<HttpResponseEventArgs> OnFetchResponse;
 
+        event EventHandler<SystemProxyChangeEventArgs> OnProxyStatus;
+
+        /// <summary>
+        /// Http上游代理地址
+        /// </summary>
+        string HttpUpstreamProxy { get; }
+
+        /// <summary>
+        /// Https 上游代理地址
+        /// </summary>
+        string HttpsUpstreamProxy { get; }
+
+        /// <summary>
+        /// 设置上游代理地址(http+https)
+        /// </summary>
+        void SetUpstreamProxy(string addr);
+
         /// <summary>
         /// 关闭系统代理
         /// </summary>

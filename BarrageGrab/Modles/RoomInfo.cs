@@ -519,7 +519,8 @@ namespace BarrageGrab.Modles
             }
             //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,""a:)\[.+?\](?=\\n?""\]\)[\s\n\r]*?<\/script>)");
             //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""0:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
-            var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""9:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
+            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""9:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
+            var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[\d,\s*""\w:.+)\{\\""state.+?\}(?=\]\\n""\]\)[\s\n\r]*?<\/script>)");
             //字符串转义符号版本            
 
             var match = roomDataReg.Match(html);
@@ -530,10 +531,10 @@ namespace BarrageGrab.Modles
             }
             var matchData = Regex.Unescape(match.Value);
 
-            JToken jsonObject = null;
+            JObject jsonObject = null;
             try
             {
-                jsonObject = JsonConvert.DeserializeObject<JArray>(matchData)[3];
+                jsonObject = JObject.Parse(matchData);
             }
             catch (Exception ex)
             {

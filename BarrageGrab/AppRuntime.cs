@@ -72,6 +72,11 @@ namespace BarrageGrab
             public ConcurrentDictionary<string, RoomInfo> RoomInfoCache { get; } = new ConcurrentDictionary<string, RoomInfo>();
 
             /// <summary>
+            /// 添加房间缓存时触发
+            /// </summary>
+            public event EventHandler<RoomCacheEventArgs> OnCache;
+
+            /// <summary>
             /// 添加WebRoomid-房间ID 映射
             /// </summary>
             /// <param name="webrid"></param>
@@ -84,12 +89,21 @@ namespace BarrageGrab
                 }
                 else
                 {
-                    RoomInfoCache.TryAdd(roomid, new RoomInfo()
+                    var info = new RoomInfo()
                     {
                         RoomId = roomid,
                         WebRoomId = webrid,
                         Title = "房间" + webrid
-                    });
+                    };
+                    var succ = RoomInfoCache.TryAdd(roomid,info);
+                    if (succ)
+                    {
+                        OnCache?.Invoke(this, new RoomCacheEventArgs()
+                        {
+                            Model = 0,
+                            RoomInfo = info
+                        });
+                    }
                 }
             }
 
@@ -105,10 +119,23 @@ namespace BarrageGrab
                 if (RoomInfoCache.ContainsKey(roomid))
                 {
                     RoomInfoCache[roomid] = roomInfo;
+                    OnCache?.Invoke(this, new RoomCacheEventArgs()
+                    {
+                        Model = 1,
+                        RoomInfo = roomInfo
+                    });
                 }
                 else
                 {
-                    RoomInfoCache.TryAdd(roomid, roomInfo);
+                    var succ = RoomInfoCache.TryAdd(roomid, roomInfo);
+                    if (succ)
+                    {
+                        OnCache?.Invoke(this,new RoomCacheEventArgs()
+                        {
+                            Model = 0,
+                            RoomInfo = roomInfo
+                        });
+                    }
                 }
             }
 
@@ -135,7 +162,17 @@ namespace BarrageGrab
                 if (RoomInfoCache.TryGetValue(roomid, out value)) return value;
                 return null;
             }
-        }
-    }
 
+
+            public class RoomCacheEventArgs : EventArgs
+            {
+                public RoomInfo RoomInfo { get; set; }   
+                
+                /// <summary>
+                /// 0:添加,1更新,2删除
+                /// </summary>
+                public int Model { get; set; }
+            }
+        }        
+    }
 }

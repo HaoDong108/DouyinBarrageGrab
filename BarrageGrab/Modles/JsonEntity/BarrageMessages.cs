@@ -1,19 +1,31 @@
-﻿namespace BarrageGrab.Modles.JsonEntity
+﻿using System.ComponentModel;
+
+namespace BarrageGrab.Modles.JsonEntity
 {
     /// <summary>
     /// 弹幕消息类型
     /// </summary>
     public enum PackMsgType
     {
-        无 = 0,
+        [Description("无")]
+        无 = 0,       
+        [Description("消息")] 
         弹幕消息 = 1,
+        [Description("点赞")]
         点赞消息 = 2,
+        [Description("进房")]
         进直播间 = 3,
+        [Description("关注")]
         关注消息 = 4,
+        [Description("礼物")]
         礼物消息 = 5,
+        [Description("统计")]
         直播间统计 = 6,
+        [Description("粉团")]
         粉丝团消息 = 7,
+        [Description("分享")]
         直播间分享 = 8,
+        [Description("下播")]
         下播 = 9
     }
 

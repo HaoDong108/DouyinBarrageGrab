@@ -139,11 +139,18 @@
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
     <Compile Include="Appsetting.cs" />
-    <Compile Include="FormView.cs">
+    <Compile Include="Forms\FormView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FormView.Designer.cs">
+    <Compile Include="Forms\FormView.Designer.cs">
       <DependentUpon>FormView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Models\RoomCacheItem.cs" />
+    <Compile Include="Forms\RoomDetail.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\RoomDetail.Designer.cs">
+      <DependentUpon>RoomDetail.cs</DependentUpon>
     </Compile>
     <Compile Include="Logger.cs" />
     <Compile Include="Modles\BusinessExecption.cs" />
@@ -153,8 +160,9 @@
     <Compile Include="Modles\ProtoEntity\Wss.cs" />
     <Compile Include="Modles\RoomInfo.cs" />
     <Compile Include="ObjectExtension.cs" />
-    <Compile Include="Proxy\EventArgs\HttpResponseEventArgs.cs" />
-    <Compile Include="Proxy\EventArgs\WsMessageEventArgs.cs" />
+    <Compile Include="Proxy\ProxyEventArgs\HttpResponseEventArgs.cs" />
+    <Compile Include="Proxy\ProxyEventArgs\SystemProxyChangeEventArgs.cs" />
+    <Compile Include="Proxy\ProxyEventArgs\WsMessageEventArgs.cs" />
     <Compile Include="Proxy\ISystemProxy.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Proxy\SystemProxy.cs" />
@@ -190,8 +198,11 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="FormView.resx">
+    <EmbeddedResource Include="Forms\FormView.resx">
       <DependentUpon>FormView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\RoomDetail.resx">
+      <DependentUpon>RoomDetail.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

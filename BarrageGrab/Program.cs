@@ -12,7 +12,7 @@ namespace BarrageGrab
     public class Program
     {
         static void Main(string[] args)
-        {            
+        {
             if (CheckAlreadyRunning())
             {
                 Console.WriteLine("已经有一个监听程序在运行，按任意键退出...");
@@ -24,15 +24,31 @@ namespace BarrageGrab
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式            
             Console.Title = "抖音弹幕监听推送";
             AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);
+            AppRuntime.WssService.Grab.Proxy.SetUpstreamProxy(Appsetting.Current.UpstreamProxy);
 
             bool exited = false;
+            bool formExited = false;
             AppRuntime.WssService.StartListen();
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{AppRuntime.WssService.ServerLocation} 弹幕服务已启动...");
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Title = $"抖音弹幕监听推送 [{AppRuntime.WssService.ServerLocation}]";
-            
+            FormView mainForm = null;
+
+            if (Appsetting.Current.ShowWindow)
+            {
+                var uiThread = new Thread(new ThreadStart(() =>
+                {
+                    mainForm = new FormView();
+                    //开启消息循环
+                    System.Windows.Forms.Application.Run(mainForm);
+                    formExited = true;
+                }));
+                uiThread.SetApartmentState(ApartmentState.STA);
+                uiThread.IsBackground = true;
+                uiThread.Start();
+            }
 
             AppRuntime.WssService.OnClose += (s, e) =>
             {
@@ -42,13 +58,25 @@ namespace BarrageGrab
 
             while (!exited)
             {
+                if (formExited && !exited)
+                {
+                    AppRuntime.WssService.Close();
+                }                    
                 Thread.Sleep(500);
             }
 
             Console.WriteLine("服务器已关闭...");
-            
+
+            //if (!mainForm.IsDisposed)
+            //{
+            //    mainForm.Invoke(new Action(() =>
+            //    {
+            //        mainForm.Close();
+            //    }));
+            //}            
+
             //退出程序,不显示 按任意键退出
-            Environment.Exit(0);
+            //Environment.Exit(0);
         }
 
         private static WinApi.ControlCtrlDelegate cancelHandler = new WinApi.ControlCtrlDelegate((CtrlType) =>

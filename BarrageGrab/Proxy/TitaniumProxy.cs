@@ -31,6 +31,10 @@ namespace BarrageGrab.Proxy
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
         static ConsoleWriter console = new ConsoleWriter();
 
+        public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString()??""; } }
+
+        public override string HttpsUpstreamProxy { get { return proxyServer?.UpStreamHttpsProxy?.ToString()??""; } }
+
         public TitaniumProxy()
         {
             //注册系统代理
@@ -47,10 +51,28 @@ namespace BarrageGrab.Proxy
             {
                 Console.WriteLine("正在进行证书安装，需要安装证书才可进行https解密，若有提示请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
-            }
+            }            
 
+            proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
+            proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
+            //proxyServer.AfterResponse += ProxyServer_AfterResponse;            
+
+            explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
+            explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
+            proxyServer.AddEndPoint(explicitEndPoint);
+        }
+
+        public override void SetUpstreamProxy(string upstreamProxyAddr)
+        {
+            if (string.IsNullOrWhiteSpace(upstreamProxyAddr)) return;
+            upstreamProxyAddr = upstreamProxyAddr.Trim();
+            var reg = new Regex(@"[a-zA-Z0-9\.]+:\d+");            
+            if(!reg.IsMatch(upstreamProxyAddr))
+            {
+                throw new Exception("上游代理地址格式不正确，必须为ip:port格式");
+            }            
             //设置上游代理地址
-            var upstreamProxyAddr = Appsetting.Current.UpstreamProxy;
+            //var upstreamProxyAddr = Appsetting.Current.UpstreamProxy;
             if (!upstreamProxyAddr.IsNullOrWhiteSpace())
             {
                 upStreamProxy = new ExternalProxy()
@@ -62,15 +84,6 @@ namespace BarrageGrab.Proxy
                 proxyServer.UpStreamHttpProxy = upStreamProxy;
                 proxyServer.UpStreamHttpsProxy = upStreamProxy;
             }
-
-            proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
-            proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
-            //proxyServer.AfterResponse += ProxyServer_AfterResponse;
-
-
-            explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
-            explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
-            proxyServer.AddEndPoint(explicitEndPoint);
         }
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
