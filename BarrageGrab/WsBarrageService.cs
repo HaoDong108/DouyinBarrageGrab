@@ -24,7 +24,7 @@ namespace BarrageGrab
     /// 弹幕服务
     /// </summary>
     public class WsBarrageService
-    {       
+    {
         WebSocketServer socketServer;
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>();
         //礼物计数缓存
@@ -107,6 +107,7 @@ namespace BarrageGrab
         //解析用户
         private MsgUser GetUser(User data)
         {
+            if (data == null) return null;
             MsgUser user = new MsgUser()
             {
                 DisplayId = data.displayId,
@@ -114,13 +115,13 @@ namespace BarrageGrab
                 Gender = data.Gender,
                 Id = data.Id,
                 Level = data.Level,
-                PayLevel = (int)(data.payGrade?.Level ?? 0),
-                Nickname = data.Nickname,
-                HeadImgUrl = data.avatarThumb.urlLists.FirstOrDefault() ?? "",
+                PayLevel = (int)(data.payGrade?.Level ?? -1),
+                Nickname = data.Nickname ?? "用户" + data.displayId,
+                HeadImgUrl = data.avatarThumb?.urlLists?.FirstOrDefault() ?? "",
                 SecUid = data.sec_uid,
-                FollowerCount = data.followInfo.followerCount,
-                FollowingCount = data.followInfo.followingCount,
-                FollowStatus = data.followInfo.followStatus,
+                FollowerCount = data.followInfo?.followerCount ?? -1,
+                FollowingCount = data.followInfo?.followingCount ?? -1,
+                FollowStatus = data.followInfo?.followStatus ?? -1,
             };
             user.FansClub = new FansClubInfo()
             {
@@ -139,7 +140,7 @@ namespace BarrageGrab
 
         static int count = 0;
         private void PrintMsg(Msg msg, PackMsgType barType)
-        {           
+        {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId == 0 ? msg.RoomId : msg.WebRoomId)));
             var text = $"{DateTime.Now.ToString("HH:mm:ss")} [{roomName}] [{barType}]";
@@ -153,11 +154,11 @@ namespace BarrageGrab
             var append = msg.Content;
             switch (barType)
             {
-                case PackMsgType.弹幕消息:append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
-                case PackMsgType.下播:append = $"直播已结束"; break;
+                case PackMsgType.弹幕消息: append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
+                case PackMsgType.下播: append = $"直播已结束"; break;
                 default: break;
             }
-            
+
             text += append;
 
             if (Appsetting.Current.BarrageLog)
@@ -181,7 +182,7 @@ namespace BarrageGrab
                 Console.WriteLine("控制台已清理");
                 count = 0;
             }
-            console.WriteLine(text + "\n", color);            
+            console.WriteLine(text + "\n", color);
         }
 
         //粉丝团
@@ -296,8 +297,14 @@ namespace BarrageGrab
                 GroupId = msg.groupId,
                 GiftId = msg.giftId,
                 GiftName = msg.Gift.Name,
-                User = GetUser(msg.User)
+                User = GetUser(msg.User),
+                ToUser = GetUser(msg.toUser)
             };
+
+            if (enty.ToUser != null)
+            {
+                enty.Content += "，给" + enty.ToUser.Nickname;
+            }
 
             var msgType = PackMsgType.礼物消息;
             PrintMsg(enty, msgType);
@@ -517,7 +524,7 @@ namespace BarrageGrab
                         case CommandCode.DisplayConsole:
                             {
                                 var display = (bool)cmdPack.Data;
-                                AppRuntime.DisplayConsole(display);                                
+                                AppRuntime.DisplayConsole(display);
                                 break;
                             }
                     }
@@ -612,7 +619,7 @@ namespace BarrageGrab
         {
             public string Message { get; set; }
 
-            public ConsoleColor Color { get; set; }            
+            public ConsoleColor Color { get; set; }
 
             public PackMsgType MsgType { get; set; }
         }

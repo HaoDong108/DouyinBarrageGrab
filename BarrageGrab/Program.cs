@@ -21,7 +21,7 @@ namespace BarrageGrab
             }
 
             WinApi.SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
-            WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式            
+            WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
             Console.Title = "抖音弹幕监听推送";
             AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);
             AppRuntime.WssService.Grab.Proxy.SetUpstreamProxy(Appsetting.Current.UpstreamProxy);
