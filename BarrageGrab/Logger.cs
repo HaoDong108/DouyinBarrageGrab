@@ -56,6 +56,11 @@ namespace BarrageGrab
             logger.Fatal(ex, message);
         }
 
+        /// <summary>
+        /// 写入弹幕日志
+        /// </summary>
+        /// <param name="type">弹幕类型</param>
+        /// <param name="msg">弹幕内容</param>
         public static void LogBarrage(PackMsgType type, Msg msg)
         {
             if (!Appsetting.Current.BarrageLog) return;
@@ -86,9 +91,8 @@ namespace BarrageGrab
             {
                 LogWarn("弹幕日志写入失败，" + ex.Message);
                 return;
-            }            
+            }
         }
-
 
         private static string LogText(Msg msg, PackMsgType barType)
         {
@@ -111,6 +115,47 @@ namespace BarrageGrab
 
             text += append;
             return text;
+        }
+
+        /// <summary>
+        /// 写入弹幕抓包日志
+        /// </summary>
+        /// <param name="group">分组名</param>
+        /// <param name="name">包名</param>
+        /// <param name="buff">数据内容</param>
+        /// <param name="maxCount">分组下最大存储包数量</param>
+        public static void LogBarragePack(string group, string name, byte[] buff, int maxCount = 5)
+        {
+            if (buff.Length <= 10) return;
+            if (group.IsNullOrWhiteSpace()) return;
+            if (name.IsNullOrWhiteSpace()) return;
+            var filename = name + ".bin";
+            var dir = Path.Combine(AppContext.BaseDirectory, "logs", "弹幕包解析", group);
+            var fullPath = Path.Combine(dir, filename);
+
+            try
+            {
+                //获取该文件在该目录下的数量
+                var fiels = Directory.GetFiles(dir, filename);
+                var count = fiels.Length;
+                if (count > 0)
+                {
+                    filename = $"{name}({count}).bin";
+                    fullPath = Path.Combine(dir, filename);
+                }
+                File.WriteAllBytes(fullPath, buff);
+
+                if (++count > maxCount)
+                {
+                    //删除最早的文件
+                    var first = fiels.Select(s=>new FileInfo(s)).OrderBy(o=>o.CreationTime).FirstOrDefault();
+                    File.Delete(first.FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("写入包日志时失败，错误信息:" + ex.Message);
+            }
         }
     }
 }

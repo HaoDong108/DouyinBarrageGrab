@@ -142,6 +142,7 @@ namespace BarrageGrab
         private void Proxy_OnFetchResponse(object sender, HttpResponseEventArgs e)
         {
             var payload = e.HttpClient.Response.Body;
+
             var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
 
             if (!succPackHostNames.Contains(e.HostName))

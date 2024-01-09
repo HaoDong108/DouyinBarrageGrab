@@ -139,6 +139,15 @@
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
     <Compile Include="Appsetting.cs" />
+    <Compile Include="Forms - 复制\FormView.cs" />
+    <Compile Include="Forms - 复制\FormView.Designer.cs">
+      <DependentUpon>FormView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms - 复制\Models\RoomCacheItem.cs" />
+    <Compile Include="Forms - 复制\RoomDetail.cs" />
+    <Compile Include="Forms - 复制\RoomDetail.Designer.cs">
+      <DependentUpon>RoomDetail.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\FormView.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -198,6 +207,12 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Forms - 复制\FormView.resx">
+      <DependentUpon>FormView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms - 复制\RoomDetail.resx">
+      <DependentUpon>RoomDetail.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FormView.resx">
       <DependentUpon>FormView.cs</DependentUpon>
     </EmbeddedResource>
