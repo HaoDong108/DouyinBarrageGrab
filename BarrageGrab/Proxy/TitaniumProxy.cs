@@ -8,8 +8,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BarrageGrab.Modles;
 using BarrageGrab.Proxy.ProxyEventArgs;
-using ColorConsole;
-using Org.BouncyCastle.Ocsp;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
@@ -29,12 +27,41 @@ namespace BarrageGrab.Proxy
         const string DOUYIN_HOST = "www.douyin.com";
         const string USER_INFO_PATH = "/webcast/user/me/";
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
-        static ConsoleWriter console = new ConsoleWriter();
+        const string LIVE_SCRIPT_PATH = "/obj/static/webcast/douyin_live";
 
-        public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString()??""; } }
+        public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
 
-        public override string HttpsUpstreamProxy { get { return proxyServer?.UpStreamHttpsProxy?.ToString()??""; } }
+        public override string HttpsUpstreamProxy { get { return proxyServer?.UpStreamHttpsProxy?.ToString() ?? ""; } }
 
+        static TitaniumProxy()
+        {
+            // 设置代理过滤规则
+            string[] bypassList = { "localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*",
+                                "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*",
+                                "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*",
+                                "192.168.*" };
+
+            // 创建WebProxy对象，并设置代理过滤规则
+            WebProxy proxy = new WebProxy
+            {
+                BypassList = bypassList,
+                UseDefaultCredentials = true
+            };
+
+            // 设置不使用回环地址
+            proxy.BypassProxyOnLocal = true;
+
+            try
+            {
+                // 将代理设置为系统默认代理
+                WebRequest.DefaultWebProxy = proxy;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarn("代理环境设置失败：" + ex.Message);
+            }
+        }
+        
         public TitaniumProxy()
         {
             //注册系统代理
@@ -49,9 +76,9 @@ namespace BarrageGrab.Proxy
             proxyServer.CertificateManager.RootCertificate = proxyServer.CertificateManager.LoadRootCertificate();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
-                Console.WriteLine("正在进行证书安装，需要安装证书才可进行https解密，若有提示请确定");
+                Logger.PrintColor("正在进行证书安装，需要安装证书才可进行https解密，若有提示请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
-            }            
+            }
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
@@ -66,11 +93,11 @@ namespace BarrageGrab.Proxy
         {
             if (string.IsNullOrWhiteSpace(upstreamProxyAddr)) return;
             upstreamProxyAddr = upstreamProxyAddr.Trim();
-            var reg = new Regex(@"[a-zA-Z0-9\.]+:\d+");            
-            if(!reg.IsMatch(upstreamProxyAddr))
+            var reg = new Regex(@"[a-zA-Z0-9\.]+:\d+");
+            if (!reg.IsMatch(upstreamProxyAddr))
             {
                 throw new Exception("上游代理地址格式不正确，必须为ip:port格式");
-            }            
+            }
             //设置上游代理地址
             //var upstreamProxyAddr = Appsetting.Current.UpstreamProxy;
             if (!upstreamProxyAddr.IsNullOrWhiteSpace())
@@ -104,6 +131,7 @@ namespace BarrageGrab.Proxy
             await HookScriptAsync(e);
         }
 
+        // Hook 弹幕
         private async Task HookBarrage(SessionEventArgs e)
         {
             string uri = e.HttpClient.Request.RequestUri.ToString();
@@ -150,6 +178,7 @@ namespace BarrageGrab.Proxy
             return null;
         }
 
+        // Hook 直播页面
         private async Task HookPageAsync(SessionEventArgs e)
         {
             string uri = e.HttpClient.Request.RequestUri.ToString();
@@ -159,88 +188,166 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
             var liveRoomMactch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/(\d+)");
+            var liveHomeMatch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/?$");
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
             //检测是否为dom页，用于脚本注入
-            if (contentType.Contains("text/html"))
+            if (!contentType.Contains("text/html")) return;
+
+            //如果响应头含有 CSP(https://blog.csdn.net/qq_30436011/article/details/127485927 会阻止内嵌脚本执行) 则删除
+            var csp = e.HttpClient.Response.Headers.GetFirstHeader("Content-Security-Policy");
+            if (csp != null)
             {
-                //如果响应头含有 CSP(https://blog.csdn.net/qq_30436011/article/details/127485927 会阻止内嵌脚本执行) 则删除
-                var csp = e.HttpClient.Response.Headers.GetFirstHeader("Content-Security-Policy");
-                if (csp != null)
+                e.HttpClient.Response.Headers.RemoveHeader("Content-Security-Policy");
+            }
+
+            //获取 content-type                
+            if (liveRoomMactch.Success)
+            {
+                string webrid = liveRoomMactch.Groups[1].Value;
+                //获取直播页注入js
+                string liveRoomInjectScript = GetInjectScript("livePage");
+
+                //注入上下文变量;
+                var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
-                    e.HttpClient.Response.Headers.RemoveHeader("Content-Security-Policy");
+                    {"PROCESS_NAME","'{processName}'"},
+                    {"AUTOPAUSE",Appsetting.Current.AutoPause.ToString().ToLower()}
+                });
+                liveRoomInjectScript = scriptContext + liveRoomInjectScript;
+                var html = await e.GetResponseBodyAsString();
+                var doc = new HtmlAgilityPack.HtmlDocument();
+                doc.LoadHtml(html);
+
+                if (!liveRoomInjectScript.IsNullOrWhiteSpace())
+                {
+                    //利用 HtmlAgilityPack 在尾部注入script 标签
+                    RoomInfo roominfo;
+                    var tup = RoomInfo.TryParseRoomPageHtml(html, out roominfo);
+                    int code = tup.Item1;
+                    string msg = tup.Item2;
+
+                    if (code == 0)
+                    {
+                        Logger.LogInfo($"直播页{webrid}房间信息已采集到缓存");
+                        roominfo.WebRoomId = webrid;
+                        roominfo.LiveUrl = url;
+                        AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                    }
+                    else
+                    {
+                        roominfo = new RoomInfo();
+                        roominfo.WebRoomId = webrid;
+                        roominfo.LiveUrl = url;
+                        //正则匹配主播标题
+                        //<div class="st8eGKi4" data-e2e="live-room-nickname">和平精英小夜y</div>
+                        var match = Regex.Match(html, @"(?<=live-room-nickname""\>).+(?=<\/div>)");
+                        if (match.Success)
+                        {
+                            roominfo.Owner = new RoomInfo.RoomAnchor()
+                            {
+                                Nickname = match.Value,
+                                UserId = "-1"
+                            };
+                        }
+                        AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                    }
+
+
+                    try
+                    {
+
+                        //找到body标签,在尾部注入script标签
+                        var body = doc.DocumentNode.SelectSingleNode("//body");
+                        if (body != null)
+                        {
+                            var script = doc.CreateElement("script");
+                            script.InnerHtml = liveRoomInjectScript;
+                            body.AppendChild(script);
+                            html = doc.DocumentNode.OuterHtml;
+                            Logger.PrintColor($"直播页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, $"直播页{url},用户脚本注入异常");
+                    }
                 }
 
-                //获取 content-type                
-                if (liveRoomMactch.Success)
+                //给script标签 src加上时间戳避免缓存
+                if (Appsetting.Current.DisableLivePageScriptCache)
                 {
-                    string webrid = liveRoomMactch.Groups[1].Value;
-                    //获取直播页注入js
-                    string liveRoomInjectScript = GetInjectScript("livePage");
-
-                    //注入上下文变量;
-                    var scriptContext = $"const PROCESS_NAME = '{processName}';\n";
-                    liveRoomInjectScript = scriptContext + liveRoomInjectScript;
-
-                    if (!liveRoomInjectScript.IsNullOrWhiteSpace())
+                    var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
+                    if (scripts != null)
                     {
-                        //利用 HtmlAgilityPack 在尾部注入script 标签
-                        var html = await e.GetResponseBodyAsString();
-                        RoomInfo roominfo;
-                        var tup = RoomInfo.TryParseRoomPageHtml(html, out roominfo);
-                        int code = tup.Item1;
-                        string msg = tup.Item2;
+                        var ticks = DateTime.Now.Ticks;
+                        foreach (var script in scripts)
+                        {
+                            var src = script.Attributes["src"].Value;
+                            if (src.Contains("?"))
+                            {
+                                src += "&_t=" + ticks;
+                            }
+                            else
+                            {
+                                src += "?_t=" + ticks;
+                            }
+                            script.Attributes["src"].Value = src;
+                        }
+                        html = doc.DocumentNode.OuterHtml;
+                    }
+                }
 
-                        if (code == 0)
-                        {
-                            Logger.LogInfo($"直播页{webrid}房间信息已采集到缓存");
-                            roominfo.WebRoomId = webrid;
-                            roominfo.LiveUrl = url;
-                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
-                        }
-                        else
-                        {
-                            roominfo = new RoomInfo();
-                            roominfo.WebRoomId = webrid;
-                            roominfo.LiveUrl = url;
-                            //正则匹配主播标题
-                            //<div class="st8eGKi4" data-e2e="live-room-nickname">和平精英小夜y</div>
-                            var match = Regex.Match(html, @"(?<=live-room-nickname""\>).+(?=<\/div>)");
-                            if (match.Success)
-                            {
-                                roominfo.Owner = new RoomInfo.RoomAnchor()
-                                {
-                                    Nickname = match.Value,
-                                    UserId = "-1"
-                                };
-                            }
-                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
-                        }
-                        try
-                        {
-                            var doc = new HtmlAgilityPack.HtmlDocument();
-                            doc.LoadHtml(html);
-                            //找到body标签,在尾部注入script标签
-                            var body = doc.DocumentNode.SelectSingleNode("//body");
-                            if (body != null)
-                            {
-                                var script = doc.CreateElement("script");
-                                script.InnerHtml = liveRoomInjectScript;
-                                body.AppendChild(script);
-                                var newHtml = doc.DocumentNode.OuterHtml;
-                                e.SetResponseBodyString(newHtml);
-                                console.WriteLine($"直播页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, $"直播页{url},用户脚本注入异常");
-                        }
+                e.SetResponseBodyString(html);
+            }
+
+            //直播主页
+            if (liveHomeMatch.Success)
+            {
+                //获取直播页注入js
+                string liveHoomInjectScript = GetInjectScript("livePage");
+
+                //注入上下文变量;
+                var scriptContext = BuildContext(new Dictionary<string, string>()
+                {
+                    {"PROCESS_NAME","'{processName}'"},
+                    {"AUTOPAUSE",Appsetting.Current.AutoPause.ToString().ToLower()}
+                });
+                liveHoomInjectScript = scriptContext + liveHoomInjectScript;
+
+
+                if (!liveHoomInjectScript.IsNullOrWhiteSpace())
+                {
+                    //利用 HtmlAgilityPack 在尾部注入script 标签
+                    var html = await e.GetResponseBodyAsString();
+                    var doc = new HtmlAgilityPack.HtmlDocument();
+                    doc.LoadHtml(html);
+                    //找到body标签,在尾部注入script标签
+                    var body = doc.DocumentNode.SelectSingleNode("//body");
+                    if (body != null)
+                    {
+                        var script = doc.CreateElement("script");
+                        script.InnerHtml = liveHoomInjectScript;
+                        body.AppendChild(script);
+                        var newHtml = doc.DocumentNode.OuterHtml;
+                        e.SetResponseBodyString(newHtml);
+                        Logger.PrintColor($"直播首页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
                     }
                 }
             }
         }
 
+        //生成注入上下文
+        private string BuildContext(IDictionary<string, string> constVals)
+        {
+            var scriptContext = string.Join("\r\n", constVals.Select(s =>
+            {
+                return "const " + s.Key + " = " + s.Value + ";";
+            }));
+            return scriptContext;
+        }
+
+        // Hook Script 脚本
         private async Task HookScriptAsync(SessionEventArgs e)
         {
             string uri = e.HttpClient.Request.RequestUri.ToString();
@@ -251,14 +358,14 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
+            if (contentType == null) return;
+            if (!contentType.Trim().ToLower().Contains("application/javascript")) return;
+            if (e.HttpClient.Response.StatusCode != 200) return;
+
             //判断响应内容是否为js application/javascript
-            if (contentType != null &&
-                contentType.Trim().ToLower().Contains("application/javascript") &&
-                hostname == SCRIPT_HOST
-                && e.HttpClient.Response.StatusCode == 200
+            if (hostname == SCRIPT_HOST
                 //这俩个进程不需要注入
-                && processName != "直播伴侣"
-                && processName != "douyin"
+                && processName != "直播伴侣" && processName != "douyin"
                 )
             {
                 var js = await e.GetResponseBodyAsString();
@@ -271,8 +378,29 @@ namespace BarrageGrab.Proxy
                 {
                     js = reg2.Replace(js, "if(!${v1}()&&${v2}.current){return;");
                     e.SetResponseBodyString(js);
-                    console.WriteLine($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
-                    return;
+                    Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
+                }
+            }
+
+            if (url.Contains(LIVE_SCRIPT_PATH) && Appsetting.Current.ForcePolling)
+            {
+                var reg = new Regex(@"if\s*\((?<patt>!this\.stopPolling)\)");
+                var js = await e.GetResponseBodyAsString();
+                var match = reg.Match(js);
+                if (match.Success)
+                {
+                    var pollingIntervalReg = new Regex(@"this\.errorInterval\s*=(?<value>.+?),");
+                    var pollingIntervalMatch = pollingIntervalReg.Match(js);
+                    if (pollingIntervalMatch.Success)
+                    {
+                        var myValue = Appsetting.Current.PollingInterval;
+                        js = pollingIntervalReg.Replace(js, $"this.pollingInterval={myValue},");
+                        Logger.PrintColor($"直播间已成功修改轮询间隔为{myValue}ms", ConsoleColor.Green);
+                    }
+
+                    js = reg.Replace(js, "if(true)");
+                    e.SetResponseBodyString(js);
+                    Logger.PrintColor($"直播间已强制启用Http轮询模式", ConsoleColor.Green);
                 }
             }
         }
@@ -287,31 +415,34 @@ namespace BarrageGrab.Proxy
             return Task.CompletedTask;
         }
 
+        //控制要解密SSL的域名
         private async Task ExplicitEndPoint_BeforeTunnelConnectRequest(object sender, TunnelConnectSessionEventArgs e)
         {
             string url = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
 
-            //用于检测修改js脚本
-            if (hostname == SCRIPT_HOST)
+            //需要解析SSL的域名 放在这里，全开会导致性能问题，应只解析业务需要的域名
+            var decryptSsls = new string[]
+            {
+                SCRIPT_HOST,
+                LIVE_HOST
+            };
+
+            if (decryptSsls.Contains(hostname))
             {
                 e.DecryptSsl = true;
                 return;
             }
-
-            //用于采集当前用户信息数据，供本地调用
-            if (hostname == LIVE_HOST)
+            else
             {
-                e.DecryptSsl = true;
-                return;
-            }
-
-            if (!CheckHost(hostname))
-            {
-                e.DecryptSsl = false;
+                if (!CheckHost(hostname))
+                {
+                    e.DecryptSsl = false;
+                }
             }
         }
 
+        //检测域名白名单
         protected override bool CheckHost(string host)
         {
             host = host.Trim().ToLower();
@@ -319,6 +450,7 @@ namespace BarrageGrab.Proxy
             return succ || host == SCRIPT_HOST || host == LIVE_HOST;
         }
 
+        //WebSocket 流读取
         private async void WebSocket_DataReceived(object sender, DataEventArgs e)
         {
             var args = (SessionEventArgs)sender;
@@ -365,7 +497,7 @@ namespace BarrageGrab.Proxy
             }
             catch (Exception ex)
             {
-                Console.WriteLine("解析某个WebSocket包出错：" + ex.Message);
+                Logger.PrintColor("解析某个WebSocket包出错：" + ex.Message);
             }
 
             if (messageData.Count > 0)
@@ -374,6 +506,7 @@ namespace BarrageGrab.Proxy
             }
 
         }
+
 
         /// <summary>
         /// 释放资源，关闭系统代理
