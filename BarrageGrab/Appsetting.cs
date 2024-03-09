@@ -29,13 +29,17 @@ namespace BarrageGrab
                 LogFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
                 FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
                 HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
-                RoomIds = AppSettings["roomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).Select(s => long.Parse(s)).ToArray();
                 UsedProxy = bool.Parse(AppSettings["usedProxy"].Trim());
                 ListenAny = bool.Parse(AppSettings["listenAny"].Trim());
                 UpstreamProxy = AppSettings["upstreamProxy"].Trim();
                 HideConsole = bool.Parse(AppSettings["hideConsole"].Trim());
                 BarrageLog = bool.Parse(AppSettings["barrageFileLog"].Trim());
                 ShowWindow = bool.Parse(AppSettings["showWindow"].Trim());
+                AutoPause = bool.Parse(AppSettings["autoPause"].Trim());
+                ForcePolling = bool.Parse(AppSettings["forcePolling"].Trim());
+                PollingInterval = int.Parse(AppSettings["pollingInterval"].Trim());
+                DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
+                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).Select(x => long.Parse(x)).ToArray();
 
                 var printFilter = AppSettings["printFilter"].Trim().ToLower();
                 var pushFilter = AppSettings["pushFilter"].Trim().ToLower();
@@ -58,7 +62,7 @@ namespace BarrageGrab
             }
             catch (Exception ex)
             {
-                Console.WriteLine("配置文件读取失败,请检查配置文件是否正确");
+                Logger.PrintColor("配置文件读取失败,请检查配置文件是否正确");
                 throw ex;
             }
         }
@@ -145,7 +149,7 @@ namespace BarrageGrab
         /// <summary>
         /// 监听的房间号
         /// </summary>
-        public long[] RoomIds { get; private set; } = new long[0];
+        public long[] WebRoomIds { get; private set; } = new long[0];
 
         /// <summary>
         /// 使用域名过滤
@@ -176,5 +180,25 @@ namespace BarrageGrab
         /// 显示窗体
         /// </summary>
         public bool ShowWindow { get; private set; } = false;
+
+        /// <summary>
+        /// 进入直播间自动暂停播放
+        /// </summary>
+        public bool AutoPause { get; private set; } = false;
+
+        /// <summary>
+        /// 强制启用轮询模式获取弹幕(仅对浏览器和客户端生效)
+        /// </summary>
+        public bool ForcePolling { get; private set; } = false;
+
+        /// <summary>
+        /// 控制轮询间隔
+        /// </summary>
+        public int PollingInterval { get; private set; } = 1000;
+
+        /// <summary>
+        /// 禁用直播页面脚本缓存
+        /// </summary>
+        public bool DisableLivePageScriptCache { get; private set; } = true;
     }
 }
