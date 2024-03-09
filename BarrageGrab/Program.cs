@@ -15,14 +15,17 @@ namespace BarrageGrab
         {
             if (CheckAlreadyRunning())
             {
-                Console.WriteLine("已经有一个监听程序在运行，按任意键退出...");
+                Logger.PrintColor("已经有一个监听程序在运行，按任意键退出...");
                 Console.ReadKey();
                 return;
             }
 
             WinApi.SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
-            Console.Title = "抖音弹幕监听推送";
+            if (WinApi.GetConsoleWindow() != IntPtr.Zero)
+            {
+                Console.Title = "抖音弹幕监听推送";
+            }
             AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);
             AppRuntime.WssService.Grab.Proxy.SetUpstreamProxy(Appsetting.Current.UpstreamProxy);
 
@@ -31,9 +34,12 @@ namespace BarrageGrab
             AppRuntime.WssService.StartListen();
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"{AppRuntime.WssService.ServerLocation} 弹幕服务已启动...");
+            Logger.LogSucc($"{AppRuntime.WssService.ServerLocation} 弹幕服务已启动...");
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Title = $"抖音弹幕监听推送 [{AppRuntime.WssService.ServerLocation}]";
+            if (WinApi.GetConsoleWindow() != IntPtr.Zero)
+            {
+                Console.Title = $"抖音弹幕监听推送 [{AppRuntime.WssService.ServerLocation}]";
+            }
             FormView mainForm = null;
 
             if (Appsetting.Current.ShowWindow)
@@ -65,7 +71,7 @@ namespace BarrageGrab
                 Thread.Sleep(500);
             }
 
-            Console.WriteLine("服务器已关闭...");
+            Logger.PrintColor("服务器已关闭...");
 
             //if (!mainForm.IsDisposed)
             //{
@@ -84,11 +90,11 @@ namespace BarrageGrab
             switch (CtrlType)
             {
                 case 0:
-                    //Console.WriteLine("0工具被强制关闭"); //Ctrl+C关闭  
+                    //Logger.PrintColor("0工具被强制关闭"); //Ctrl+C关闭
                     //server.Close();
                     break;
                 case 2:
-                    Console.WriteLine("2工具被强制关闭");//按控制台关闭按钮关闭
+                    Logger.PrintColor("2工具被强制关闭");//按控制台关闭按钮关闭
                     AppRuntime.WssService.Close();
                     break;
             }
