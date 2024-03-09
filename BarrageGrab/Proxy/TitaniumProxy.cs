@@ -76,7 +76,7 @@ namespace BarrageGrab.Proxy
             proxyServer.CertificateManager.RootCertificate = proxyServer.CertificateManager.LoadRootCertificate();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
-                Logger.PrintColor("正在进行证书安装，需要安装证书才可进行https解密，若有提示请确定");
+                Logger.PrintColor("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
 
