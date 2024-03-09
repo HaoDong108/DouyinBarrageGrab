@@ -20,8 +20,6 @@ namespace BarrageGrab
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
         Appsetting appsetting = Appsetting.Current;
-        //解包成功的域名缓存
-        List<string> succPackHostNames = new List<string>();
 
         /// <summary>
         /// 进入直播间
@@ -126,11 +124,7 @@ namespace BarrageGrab
                 allBuff = e.NeedDecompress ? Decompress(enty.Payload) : enty.Payload;
                 var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(allBuff));
 
-                if (!succPackHostNames.Contains(e.HostName))
-                {
-                    succPackHostNames.Add(e.HostName);
-                    SaveHostNameCache();
-                }
+
                 response.Messages.ForEach(f => DoMessage(f,e.ProcessName));
             }
             catch (Exception) { }
@@ -143,11 +137,6 @@ namespace BarrageGrab
 
             var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
 
-            if (!succPackHostNames.Contains(e.HostName))
-            {
-                succPackHostNames.Add(e.HostName);
-                SaveHostNameCache();
-            }
             response.Messages.ForEach(f =>
             {
                 DoMessage(f,e.ProcessName);
@@ -284,36 +273,6 @@ namespace BarrageGrab
                 return;
             }
         }
-
-        //将成功解包的域名缓存到文件
-        private void SaveHostNameCache()
-        {
-            //获取程序运行目录
-            var baseDir = Directory.GetCurrentDirectory();
-            var fullPath = Path.Combine(baseDir, "成功解包域名缓存.txt");
-
-            try
-            {
-                //文件不存在则创建
-                if (!File.Exists(fullPath))
-                {
-                    File.Create(fullPath);
-                }
-                var text = File.ReadAllText(fullPath);
-                var currentHosts = text.Split('\n').Where(w => !string.IsNullOrWhiteSpace(w)).Select(s => s.Trim().Trim('\r')).ToList();
-                var newHosts = succPackHostNames.Except(currentHosts).ToList();
-                //保存
-                if (newHosts.Count > 0)
-                {
-                    File.AppendAllLines(fullPath, newHosts);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.PrintColor("写入成功解包域名缓存失败：" + ex.Message, ConsoleColor.Red);
-            }
-        }
-
 
         public class RoomMessageEventArgs<T> : EventArgs where T : class
         {
