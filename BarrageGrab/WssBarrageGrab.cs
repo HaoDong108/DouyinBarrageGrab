@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProtoBuf;
-using ColorConsole;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
 using BarrageGrab.Modles.ProtoEntity;
@@ -21,7 +20,6 @@ namespace BarrageGrab
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
         Appsetting appsetting = Appsetting.Current;
-        ConsoleWriter console = new ConsoleWriter();
         //解包成功的域名缓存
         List<string> succPackHostNames = new List<string>();
 
@@ -248,7 +246,7 @@ namespace BarrageGrab
                                 }
                                 else
                                 {
-                                    console.WriteLine("未能识别的礼物ID：" + arg.giftId, ConsoleColor.Red);
+                                    Logger.PrintColor("未能识别的礼物ID：" + arg.giftId, ConsoleColor.Red);
                                     break;
                                 }
                             }
@@ -312,7 +310,7 @@ namespace BarrageGrab
             }
             catch (Exception ex)
             {
-                Console.WriteLine("写入成功解包域名缓存失败：" + ex.Message, ConsoleColor.Red);
+                Logger.PrintColor("写入成功解包域名缓存失败：" + ex.Message, ConsoleColor.Red);
             }
         }
 

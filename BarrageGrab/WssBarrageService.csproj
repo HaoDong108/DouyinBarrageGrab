@@ -70,9 +70,6 @@
     <Reference Include="BrotliSharpLib, Version=0.3.2.0, Culture=neutral, PublicKeyToken=3f4e2a1cd615fcb7, processorArchitecture=MSIL">
       <HintPath>..\packages\BrotliSharpLib.0.3.3\lib\net451\BrotliSharpLib.dll</HintPath>
     </Reference>
-    <Reference Include="ColorConsole, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ColorConsole.1.0.1\lib\net40\ColorConsole.dll</HintPath>
-    </Reference>
     <Reference Include="Fleck, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Fleck.1.2.0\lib\net45\Fleck.dll</HintPath>
     </Reference>
@@ -139,15 +136,6 @@
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
     <Compile Include="Appsetting.cs" />
-    <Compile Include="Forms - 复制\FormView.cs" />
-    <Compile Include="Forms - 复制\FormView.Designer.cs">
-      <DependentUpon>FormView.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms - 复制\Models\RoomCacheItem.cs" />
-    <Compile Include="Forms - 复制\RoomDetail.cs" />
-    <Compile Include="Forms - 复制\RoomDetail.Designer.cs">
-      <DependentUpon>RoomDetail.cs</DependentUpon>
-    </Compile>
     <Compile Include="Forms\FormView.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -207,12 +195,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Forms - 复制\FormView.resx">
-      <DependentUpon>FormView.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms - 复制\RoomDetail.resx">
-      <DependentUpon>RoomDetail.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FormView.resx">
       <DependentUpon>FormView.cs</DependentUpon>
     </EmbeddedResource>

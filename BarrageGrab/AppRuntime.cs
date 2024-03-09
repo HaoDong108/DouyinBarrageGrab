@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.Modles;
-using ColorConsole;
 
 namespace BarrageGrab
 {
@@ -161,6 +160,17 @@ namespace BarrageGrab
                 RoomInfo value;
                 if (RoomInfoCache.TryGetValue(roomid, out value)) return value;
                 return null;
+            }
+
+            /// <summary>
+            /// 根据webRoomid从缓存获取房间信息
+            /// </summary>
+            /// <param name="webrid"></param>
+            /// <returns></returns>
+            public RoomInfo GetByWebRoomid(string webrid)
+            {
+                var find = RoomInfoCache.FirstOrDefault(p => p.Value.WebRoomId == webrid);
+                return find.Value;
             }
 
 

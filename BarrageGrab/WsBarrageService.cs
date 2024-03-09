@@ -6,7 +6,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using ColorConsole;
 using Fleck;
 using Newtonsoft.Json;
 using BarrageGrab.Modles;
@@ -17,6 +16,7 @@ using System.IO;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
 using System.Drawing;
+using System.Collections.Concurrent;
 
 namespace BarrageGrab
 {
@@ -28,10 +28,9 @@ namespace BarrageGrab
         WebSocketServer socketServer;
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>();
         //礼物计数缓存
-        Dictionary<string, Tuple<int, DateTime>> giftCountCache = new Dictionary<string, Tuple<int, DateTime>>();
+        ConcurrentDictionary<string, Tuple<int, DateTime>> giftCountCache = new ConcurrentDictionary<string, Tuple<int, DateTime>>();
         Timer dieout = new Timer(10000);
         Timer giftCountTimer = new Timer(10000);
-        ConsoleWriter console = new ConsoleWriter();
         WssBarrageGrab grab = new WssBarrageGrab();
         Appsetting Appsetting = Appsetting.Current;
         bool debug = false;
@@ -92,7 +91,7 @@ namespace BarrageGrab
             {
                 timeOutKeys.ForEach(key =>
                 {
-                    giftCountCache.Remove(key);
+                    giftCountCache.TryRemove(key, out _);
 
                 });
             }
@@ -100,8 +99,12 @@ namespace BarrageGrab
 
         private bool CheckRoomId(long roomid)
         {
-            if (Appsetting.RoomIds.Length == 0) return true;
-            return Appsetting.RoomIds.Any(a => a == roomid);
+            if (!Appsetting.Current.WebRoomIds.Any()) return true;
+
+            var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
+            if (webrid <= 0) return true;
+            
+            return Appsetting.Current.WebRoomIds.Contains(webrid);
         }
 
         //解析用户
@@ -179,10 +182,10 @@ namespace BarrageGrab
             if (++count > 10000)
             {
                 Console.Clear();
-                Console.WriteLine("控制台已清理");
+                Logger.PrintColor("控制台已清理");
                 count = 0;
             }
-            console.WriteLine(text + "\n", color);
+            Logger.PrintColor(text + "\n", color);
         }
 
         //粉丝团
@@ -238,50 +241,46 @@ namespace BarrageGrab
 
             var key = msg.Common.roomId + "-" + msg.giftId + "-" + msg.groupId.ToString();
 
-            //判断礼物重复
-            if (msg.repeatEnd == 1)
-            {
-                //清除缓存中的key
-                if (msg.groupId > 0 && giftCountCache.ContainsKey(key))
-                {
-                    lock (giftCountCache)
-                    {
-                        giftCountCache.Remove(key);
-                    }
-                }
-                return;
-            }
-
-            int lastCount = 0;
             int currCount = (int)msg.repeatCount;
-            var backward = currCount <= lastCount;
-            if (currCount <= 0) currCount = 1;
-
-            if (giftCountCache.ContainsKey(key))
+            int lastCount = 0;
+            //Combo 为1时，表示为可连击礼物
+            if (msg.Gift.Combo)
             {
-                lastCount = giftCountCache[key].Item1;
-                backward = currCount <= lastCount;
-                if (!backward)
+                //判断礼物重复
+                if (msg.repeatEnd == 1)
                 {
-                    lock (giftCountCache)
+                    //清除缓存中的key
+                    if (msg.groupId > 0 && giftCountCache.ContainsKey(key))
                     {
-                        giftCountCache[key] = Tuple.Create(currCount, DateTime.Now);
+                        giftCountCache.TryRemove(key, out _);
+                    }
+                    return;
+                }
+                var backward = currCount <= lastCount;
+                if (currCount <= 0) currCount = 1;
+
+                if (giftCountCache.ContainsKey(key))
+                {
+                    lastCount = giftCountCache[key].Item1;
+                    backward = currCount <= lastCount;
+                    if (!backward)
+                    {
+                        lock (giftCountCache)
+                        {
+                            giftCountCache[key] = Tuple.Create(currCount, DateTime.Now);
+                        }
                     }
                 }
-            }
-            else
-            {
-                if (msg.groupId > 0 && !backward)
+                else
                 {
-                    lock (giftCountCache)
+                    if (msg.groupId > 0 && !backward)
                     {
-                        giftCountCache.Add(key, Tuple.Create(currCount, DateTime.Now));
+                        giftCountCache.TryAdd(key, Tuple.Create(currCount, DateTime.Now));
                     }
                 }
+                //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
+                if (backward) return;
             }
-            //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
-            if (backward) return;
-
 
             var count = currCount - lastCount;
 
@@ -290,14 +289,16 @@ namespace BarrageGrab
                 MsgId = msg.Common.msgId,
                 RoomId = msg.Common.roomId,
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name} x {currCount} 个，增量{count}个",
+                Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个",
                 DiamondCount = msg.Gift.diamondCount,
-                RepeatCount = currCount,
+                RepeatCount = msg.repeatCount,
                 GiftCount = count,
                 GroupId = msg.groupId,
                 GiftId = msg.giftId,
                 GiftName = msg.Gift.Name,
-                User = GetUser(msg.User),
+                Combo = msg.Gift.Combo,
+                ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault()??"",
+                User = GetUser(msg.User),                
                 ToUser = GetUser(msg.toUser)
             };
 
@@ -471,9 +472,9 @@ namespace BarrageGrab
         //        if (++count > 1000)
         //        {
         //            Console.Clear();
-        //            Console.WriteLine("控制台已清理");
+        //            Logger.PrintColor("控制台已清理");
         //        }
-        //        console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss")} [{bartype.ToString()}] " + msg + "\n", color);
+        //        Logger.PrintColor($"{DateTime.Now.ToString("HH:mm:ss")} [{bartype.ToString()}] " + msg + "\n", color);
         //        count = 0;
         //    }
         //}
@@ -492,7 +493,7 @@ namespace BarrageGrab
             if (!socketList.ContainsKey(clientUrl))
             {
                 socketList.Add(clientUrl, new UserState(socket));
-                console.WriteLine($"{DateTime.Now.ToLongTimeString()} 已经建立与[{clientUrl}]的连接", ConsoleColor.Green);
+                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()} 已经建立与[{clientUrl}]的连接", ConsoleColor.Green);
             }
             else
             {
@@ -535,7 +536,7 @@ namespace BarrageGrab
             socket.OnClose = () =>
             {
                 socketList.Remove(clientUrl);
-                console.WriteLine($"{DateTime.Now.ToLongTimeString()} 已经关闭与[{clientUrl}]的连接", ConsoleColor.Red);
+                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()} 已经关闭与[{clientUrl}]的连接", ConsoleColor.Red);
             };
 
             socket.OnPing = (data) =>
