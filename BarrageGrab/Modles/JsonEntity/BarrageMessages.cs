@@ -244,7 +244,17 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 抖币价格
         /// </summary>
-        public int DiamondCount { get; set; }
+        public int DiamondCount { get; set; }   
+        
+        /// <summary>
+        /// 该礼物是否可连击
+        /// </summary>
+        public bool Combo { get; set; }
+
+        /// <summary>
+        /// 礼物图片地址
+        /// </summary>
+        public string ImgUrl { get; set; }
 
         /// <summary>
         /// 送礼目标(连麦直播间有用)
