@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Resources;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,7 +7,7 @@ using System.Runtime.InteropServices;
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
 [assembly: AssemblyTitle("抖音弹幕监听器")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("基于系统代理抓包打造的抖音弹幕服务推送程序，可抓取浏览器直播间，直播伴侣，抖音客户端，的各种弹幕消息。这也是一个对开发者友好的弹幕推送器")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("小白不圆个人工作室")]
 [assembly: AssemblyProduct("抖音弹幕监听器")]
@@ -32,5 +33,6 @@ using System.Runtime.InteropServices;
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
 //通过使用 "*"，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.6.7.0")]
-[assembly: AssemblyFileVersion("2.6.7.0")]
+[assembly: AssemblyVersion("2.7.2.0")]
+[assembly: AssemblyFileVersion("2.7.2.0")]
+[assembly: NeutralResourcesLanguage("zh-CN")]
