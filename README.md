@@ -4,10 +4,22 @@
 
 + Github(受网络影响，更新很可能不及时)大佬请移步 [Gitee](https://gitee.com/haodong108/dy-barrage-grab) ，参与Issues讨论，QQ讨论群:819927029(进群前请⭐**Star**，谢谢🔪)
 + 发行版下载地址在[这里](https://gitee.com/haodong108/dy-barrage-grab/releases)，别下成源码包了!!，**决定下载使用前请先仔细阅读文档**，不要进群提问已经介绍到的问题
-+ 💭 需要ws多直播间直连、自动私信，私信监听、自动发弹幕、获取榜单、礼物、直播间、用户主页信息、等功能的可以找我(QQ1083092844)提供一些技术支持(不支持匿名直播间)
-+ 如果这个开源项目能帮老板们赚到玛尼，还望能请杯咖啡，支持我更新下去(见底部捐赠通道)
++ 💭 需要ws多直播间直连、自动私信，私信监听、自动发弹幕(正在修复)、获取榜单、礼物、直播间、用户主页信息、直播间其他所有消息类型解析 等功能的可以找我(QQ1083092844)提供一些技术支持(不支持匿名直播间)
++ 如果这个开源项目能帮老板们赚到玛尼，还望能请杯咖啡支持我更新下去(见底部<a href="#jz">捐赠通道</a>)
 
 ## ⛳近期更新
+2024-03-10 v2.7.2
+
+1. [**重要更新**] 支持设置为轮询模式监听(见配置项**forcePolling**，直播伴侣尚未支持)，比起ws更稳定，适合长时间监听
+2. 支持进入直播间画面自动暂停
+3. 优化礼物连击判定规则，可区分出可连击的礼物，进一步避免礼物数量推送不准确的问题，并新增字段:
+   1. Combo 礼物是否可连击
+   2. ImgUrl 礼物图像地址
+   3. ToUser 送礼目标
+4. roomId过滤改为 WebRoomid 过滤(仅支持已经被缓存的直播间，对直播伴侣可能无效)
+5. 添加“关闭代理.bat” 批处理脚本，见根目录或者上方文件，便于无法上网时双击执行
+6. 更多介绍请查看底下新增配置项
+
 2023-11-23 v2.7.0
 
 1. 修复了因抖音版本升级导致的WebRoomId获取不到的问题，并更近了正则表达式尽量兼容后续的变更
@@ -32,13 +44,6 @@
 3. ws连接现在默认监听在0.0.0.0地址，可以从其他客户端连接。
 4. 代理端口现在可选择不占用系统代理，便于某些用户直接使用浏览器代理获取弹幕(启动时携带参数，例如:"chrome.exe --proxy-server=127.0.0.1:8827"，也可以在浏览器快捷方式-目标 引号之后附加该参数)
 
-2023-06-19 v2.6.6
-
-1. 修复了控制台点击后阻塞程序的问题
-2. 通过篡改JS Response屏蔽了Web端定时操作检测，避免在读取web端弹幕时总被中断(本地测试通过，有问题请反馈)
-3. 添加了程序关闭指令，连接ws后可向服务端发送`{"Cmd":1}`json数据包安全关闭程序和系统代理
-4. 修复了客户端连接断开后未从套接字连接池删除，导致显示error的bug
-
 ## 🖼️控制台截图
 
 [![控制台截图](https://s1.ax1x.com/2022/11/10/z9YYPU.png)](https://imgse.com/i/z9YYPU)
@@ -57,39 +62,47 @@
 ``` xml
 <!--配置更改后重启才能生效-->
 <appSettings>
-    <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
-    <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore"/>
-    <!--Websocket监听端口-->
-    <add key="wsListenPort" value="8888"/>
-    <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
-    <add key="listenAny" value="true"/>	  
-    <!--系统代理端口-->
-    <add key="proxyPort" value="8827"/>
-	<!--上游代理地址，例如开启了系统代理，但是需要将其他无关请求转发到VPN工具中,例如:127.0.0.1:11223,不要带http://-->
-	<add key="upstreamProxy" value="dgproxy.qp-cn.local:3128"/>
-    <!--在控制台输出弹幕-->
-    <add key="printBarrage" value="true"/>
-    <!--要在控制台打印的弹幕类型,可以用','隔开(空代表不过滤) 1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]，8[直播间分享]，9[下播]-->
-    <add key="printFilter" value=""/>
-    <!--要推送的弹幕消息类型,可以用','隔开，同上-->
-    <add key="pushFilter" value=""/>
-    <!--要日志记录的弹幕消息类型,可以用','隔开，同上-->
-    <add key="logFilter" value="1,2,4,5,6,7,8"/>
-    <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
-    <add key="usedProxy" value="true"/>
-    <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
-    <add key="filterHostName" value="true"/>
-    <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
-    <add key="hostNameFilter" value=""/>
-    <!--要进行过滤的房间ID,不填代表监听所有，多项使用','分隔，浏览器进入直播间 F12 控制台输入 'window.localStorage.playRoom' 即可快速看到房间ID(不是地址栏中的那个) -->
-    <add key="roomIds" value=""/>
-	<!--隐藏控制台-->
-	<add key="hideConsole" value="false"/>
-    <!--弹幕文件日志-->
-    <add key="barrageFileLog" value="false"/>
-    <!--显示窗体-->
-    <add key="showWindow" value="false"/>
-  </appSettings>
+  <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
+  <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore" />
+  <!--Websocket监听端口-->
+  <add key="wsListenPort" value="8888" />
+  <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
+  <add key="listenAny" value="true" />
+  <!--系统代理端口-->
+  <add key="proxyPort" value="8827" />
+  <!--上游代理地址，例如开启了系统代理，但是需要将其他无关请求转发到VPN工具中,例如:127.0.0.1:11223,不要带http://-->
+  <add key="upstreamProxy" value="" />
+  <!--在控制台输出弹幕-->
+  <add key="printBarrage" value="true" />
+  <!--要在控制台打印的弹幕类型,多个使用','分隔，(空代表不过滤) 1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]，8[直播间分享]，9[下播]-->
+  <add key="printFilter" value="" />
+  <!--要推送的弹幕消息类型,多个使用','分隔，同上-->
+  <add key="pushFilter" value="" />
+  <!--要日志记录的弹幕消息类型,多个使用','分隔，同上-->
+  <add key="logFilter" value="1,2,4,5,6,7,8" />
+  <!--要进行过滤的Web房间ID，多个使用','分隔，根据缓存来过滤的，直播伴侣不支持 -->
+  <add key="webRoomIds" value="940152769375" />
+  <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
+  <add key="usedProxy" value="true" />
+  <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
+  <add key="filterHostName" value="true" />
+  <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
+  <add key="hostNameFilter" value="" />
+  <!--隐藏控制台-->
+  <add key="hideConsole" value="false" />
+  <!--弹幕文件日志-->
+  <add key="barrageFileLog" value="false" />
+  <!--显示窗体-->
+  <add key="showWindow" value="false" />
+  <!--进入直播间自动暂停播放-->
+  <add key="autoPause" value="true"/>
+  <!--强制启用轮询模式获取弹幕 (对于容易断开连接或者更加追求稳定的直播间，可以启用这个开关，虽然响应速度不如WebSocket，但是绝对稳定!)-->
+  <add key="forcePolling" value="false"/>
+  <!--弹幕轮询间隔，当 forcePolling 为 true 时生效 (毫秒，1000毫秒=1秒，不建议小于1000毫秒，太小可能会被封IP，值越小，弹幕流越丝滑，对于观众多的直播间可以改小)-->
+  <add key="pollingInterval" value="3000"/>
+  <!--禁用直播页浏览器脚本缓存 (如果需要确保脚本每次能够正常匹配替换，则启用它，可能会损失一定的页面加载速度)-->
+  <add key="disableLivePageScriptCache" value="true"/>
+</appSettings>
 ```
 
 ### 推送数据格式
@@ -180,9 +193,8 @@
 + 本程序仅供学习参考，不得用于商业用途，不得用于恶意搜集他人直播间用户信息!
 
 ## 🍻支持一下?
-
 开源不易
 
-<p>
+<p id="'jz'">
 <img src="./imgs/微信.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
 </p>
