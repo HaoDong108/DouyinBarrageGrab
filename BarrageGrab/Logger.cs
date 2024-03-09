@@ -15,6 +15,22 @@ namespace BarrageGrab
 
         private static readonly NLog.Logger logger = builder.GetLogger("*");
 
+        public static void PrintColor(string message, ConsoleColor foreground = ConsoleColor.White)
+        {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = foreground;
+            Console.WriteLine(message);
+            Console.ForegroundColor = color;
+        }
+
+        public static void LogSucc(string message)
+        {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+            logger.Info(message);
+            Console.ForegroundColor = color;
+        }
+
         // 记录日志方法
         public static void LogTrace(string message)
         {
@@ -33,27 +49,42 @@ namespace BarrageGrab
 
         public static void LogWarn(string message)
         {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
             logger.Warn(message);
+            Console.ForegroundColor = color;
         }
 
         public static void LogError(string message)
         {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
             logger.Error(message);
+            Console.ForegroundColor = color;
         }
 
         public static void LogError(Exception ex, string message)
         {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
             logger.Error(ex, message);
+            Console.ForegroundColor = color;
         }
 
         public static void LogFatal(string message)
         {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
             logger.Fatal(message);
+            Console.ForegroundColor = color;
         }
 
         public static void LogFatal(Exception ex, string message)
         {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
             logger.Fatal(ex, message);
+            Console.ForegroundColor = color;
         }
 
         /// <summary>
@@ -148,7 +179,7 @@ namespace BarrageGrab
                 if (++count > maxCount)
                 {
                     //删除最早的文件
-                    var first = fiels.Select(s=>new FileInfo(s)).OrderBy(o=>o.CreationTime).FirstOrDefault();
+                    var first = fiels.Select(s => new FileInfo(s)).OrderBy(o => o.CreationTime).FirstOrDefault();
                     File.Delete(first.FullName);
                 }
             }
