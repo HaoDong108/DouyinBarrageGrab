@@ -30,7 +30,6 @@ namespace BarrageGrab
         /// </summary>
         public static Process CurrentProcess { get; private set; } = System.Diagnostics.Process.GetCurrentProcess();
 
-
         static AppRuntime()
         {
            
@@ -47,16 +46,6 @@ namespace BarrageGrab
             if (hWnd != IntPtr.Zero)
             {
                 WinApi.ShowWindow(hWnd, show? WinApi.CmdShow.SW_SHOW:WinApi.CmdShow.SW_HIDE);
-            }
-        }
-
-        public static void DisplayConsoleByTitle(bool show)
-        {
-            var hWnd = WinApi.FindWindow(null, Console.Title);            
-            //var hWnd = WinApi.GetConsoleWindow();
-            if (hWnd != IntPtr.Zero)
-            {
-                WinApi.ShowWindow(hWnd, show ? WinApi.CmdShow.SW_SHOW : WinApi.CmdShow.SW_HIDE);
             }
         }
 
