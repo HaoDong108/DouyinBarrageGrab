@@ -25,20 +25,15 @@ namespace BarrageGrab
     /// </summary>
     public class WsBarrageService
     {
-        WebSocketServer socketServer;
-        Dictionary<string, UserState> socketList = new Dictionary<string, UserState>();
-        //礼物计数缓存
-        ConcurrentDictionary<string, Tuple<int, DateTime>> giftCountCache = new ConcurrentDictionary<string, Tuple<int, DateTime>>();
-        Timer dieout = new Timer(10000);
-        Timer giftCountTimer = new Timer(10000);
-        WssBarrageGrab grab = new WssBarrageGrab();
-        Appsetting Appsetting = Appsetting.Current;
-        bool debug = false;
+        WebSocketServer socketServer; //Ws服务器对象
+        Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
+        ConcurrentDictionary<string, Tuple<int, DateTime>> giftCountCache = new ConcurrentDictionary<string, Tuple<int, DateTime>>();//礼物计数缓存
+        Timer dieout = new Timer(10000);//离线客户端清理计时器
+        Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
+        WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
+        Appsetting Appsetting = Appsetting.Current;//全局配置文件实例        
+        static int printCount = 0; //控制台输出计数，用于判断清理控制台
 
-        /// <summary>
-        /// 服务关闭后触发
-        /// </summary>
-        public event EventHandler OnClose;
 
         /// <summary>
         /// WS服务器启动地址
@@ -55,11 +50,18 @@ namespace BarrageGrab
         /// </summary>
         public event EventHandler<PrintEventArgs> OnPrint;
 
+        /// <summary>
+        /// 服务关闭后触发
+        /// </summary>
+        public event EventHandler OnClose;
+
+        /// <summary>
+        /// 消息包装完成后触发
+        /// </summary>
+        public event EventHandler<PackMsgEventArgs> OnPackMessage;
+
         public WsBarrageService()
         {
-#if DEBUG
-            debug = true;
-#endif
             var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
             socket.RestartAfterListenError = true;//异常重启
 
@@ -81,6 +83,7 @@ namespace BarrageGrab
             giftCountTimer.Start();
         }
 
+        //礼物缓存清理计时器回调
         private void GiftCountTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             var now = DateTime.Now;
@@ -91,19 +94,28 @@ namespace BarrageGrab
             {
                 timeOutKeys.ForEach(key =>
                 {
+                    Tuple<int, DateTime> _;
                     giftCountCache.TryRemove(key, out _);
-
                 });
             }
         }
 
+        //心跳淘汰计时器回调
+        private void Dieout_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            var now = DateTime.Now;
+            var dieoutKvs = socketList.Where(w => w.Value.LastPing.AddSeconds(dieout.Interval * 3) < now).ToList();
+            dieoutKvs.ForEach(f => f.Value.Socket.Close());
+        }
+
+        //判断Rommid是否符合拦截规则
         private bool CheckRoomId(long roomid)
         {
             if (!Appsetting.Current.WebRoomIds.Any()) return true;
 
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
             if (webrid <= 0) return true;
-            
+
             return Appsetting.Current.WebRoomIds.Contains(webrid);
         }
 
@@ -141,7 +153,7 @@ namespace BarrageGrab
             return user;
         }
 
-        static int count = 0;
+        //打印消息        
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
@@ -179,13 +191,26 @@ namespace BarrageGrab
                 MsgType = barType
             });
 
-            if (++count > 10000)
+            if (++printCount > 10000)
             {
                 Console.Clear();
                 Logger.PrintColor("控制台已清理");
-                count = 0;
+                printCount = 0;
             }
             Logger.PrintColor(text + "\n", color);
+        }
+
+        //发送消息包装事件
+        private void FirePack(Msg msg, PackMsgType barType)
+        {
+            if (OnPackMessage == null) return;
+            var arg = new PackMsgEventArgs()
+            {
+                MsgType = barType,
+                Message = msg
+            };
+            //异步执行
+            Task.Run(() => OnPackMessage(this, arg));
         }
 
         //粉丝团
@@ -205,6 +230,7 @@ namespace BarrageGrab
             enty.Level = enty.User.FansClub.Level;
 
             var msgType = PackMsgType.粉丝团消息;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
         }
@@ -228,6 +254,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.直播间统计;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
@@ -252,6 +279,7 @@ namespace BarrageGrab
                     //清除缓存中的key
                     if (msg.groupId > 0 && giftCountCache.ContainsKey(key))
                     {
+                        Tuple<int, DateTime> _;
                         giftCountCache.TryRemove(key, out _);
                     }
                     return;
@@ -297,8 +325,8 @@ namespace BarrageGrab
                 GiftId = msg.giftId,
                 GiftName = msg.Gift.Name,
                 Combo = msg.Gift.Combo,
-                ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault()??"",
-                User = GetUser(msg.User),                
+                ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault() ?? "",
+                User = GetUser(msg.User),
                 ToUser = GetUser(msg.toUser)
             };
 
@@ -308,6 +336,7 @@ namespace BarrageGrab
             }
 
             var msgType = PackMsgType.礼物消息;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
             Broadcast(pack);
@@ -329,6 +358,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.关注消息;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
@@ -358,6 +388,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.直播间分享;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
 
             //shareTarget: (112:好友),(1微信)(2朋友圈)(3微博)(5:qq)(4:qq空间),shareType: 1            
@@ -383,6 +414,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.进直播间;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
@@ -407,6 +439,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.点赞消息;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
@@ -428,6 +461,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.弹幕消息;
+            FirePack(enty, msgType);
             PrintMsg(enty, msgType);
 
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -453,6 +487,7 @@ namespace BarrageGrab
                 };
 
                 var msgType = PackMsgType.下播;
+                FirePack(enty, msgType);
                 PrintMsg(enty, msgType);
                 pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.下播, e.Process);
             }
@@ -463,29 +498,7 @@ namespace BarrageGrab
             }
         }
 
-        //static int count = 0;
-        //private void Print(string msg, ConsoleColor color, PackMsgType bartype)
-        //{
-        //    if (!Appsetting.PrintFilter.Any(a => a == bartype.GetHashCode())) return;
-        //    if (Appsetting.PrintBarrage)
-        //    {
-        //        if (++count > 1000)
-        //        {
-        //            Console.Clear();
-        //            Logger.PrintColor("控制台已清理");
-        //        }
-        //        Logger.PrintColor($"{DateTime.Now.ToString("HH:mm:ss")} [{bartype.ToString()}] " + msg + "\n", color);
-        //        count = 0;
-        //    }
-        //}
-
-        private void Dieout_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            var now = DateTime.Now;
-            var dieoutKvs = socketList.Where(w => w.Value.LastPing.AddSeconds(dieout.Interval * 3) < now).ToList();
-            dieoutKvs.ForEach(f => f.Value.Socket.Close());
-        }
-
+        //监听用户连接
         private void Listen(IWebSocketConnection socket)
         {
             //客户端url
@@ -594,6 +607,9 @@ namespace BarrageGrab
             this.OnClose?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// 客户端套接字上下文
+        /// </summary>
         class UserState
         {
             /// <summary>
@@ -616,6 +632,9 @@ namespace BarrageGrab
             }
         }
 
+        /// <summary>
+        /// Print事件参数
+        /// </summary>
         public class PrintEventArgs : EventArgs
         {
             public string Message { get; set; }
@@ -623,6 +642,22 @@ namespace BarrageGrab
             public ConsoleColor Color { get; set; }
 
             public PackMsgType MsgType { get; set; }
+        }
+
+        /// <summary>
+        /// 消息包事件参数
+        /// </summary>
+        public class PackMsgEventArgs
+        {
+            /// <summary>
+            /// 消息类型
+            /// </summary>
+            public PackMsgType MsgType { get; set; }
+
+            /// <summary>
+            /// 消息内容
+            /// </summary>
+            public Msg Message { get; set; }
         }
     }
 }
