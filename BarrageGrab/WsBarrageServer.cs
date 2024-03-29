@@ -23,7 +23,7 @@ namespace BarrageGrab
     /// <summary>
     /// 弹幕服务
     /// </summary>
-    public class WsBarrageService
+    public class WsBarrageServer
     {
         WebSocketServer socketServer; //Ws服务器对象
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
@@ -60,7 +60,7 @@ namespace BarrageGrab
         /// </summary>
         public event EventHandler<PackMsgEventArgs> OnPackMessage;
 
-        public WsBarrageService()
+        public WsBarrageServer()
         {
             var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
             socket.RestartAfterListenError = true;//异常重启
