@@ -11,6 +11,10 @@ namespace BarrageGrab
 {
     public class Program
     {
+        static FormView mainForm = null;
+        static bool exited = false;
+        static bool formExited = false;
+
         static void Main(string[] args)
         {
             if (CheckAlreadyRunning())
@@ -19,29 +23,20 @@ namespace BarrageGrab
                 Console.ReadKey();
                 return;
             }
+            SetTitle("抖音弹幕监听推送");
 
-            WinApi.SetConsoleCtrlHandler(cancelHandler, true);//捕获控制台关闭
+            WinApi.SetConsoleCtrlHandler(ControlCtrlDelegate, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
-            if (WinApi.GetConsoleWindow() != IntPtr.Zero)
-            {
-                Console.Title = "抖音弹幕监听推送";
-            }
-            AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);
-            AppRuntime.WssService.Grab.Proxy.SetUpstreamProxy(Appsetting.Current.UpstreamProxy);
+            AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);//控制控制台可见
+            AppRuntime.WssService.Grab.Proxy.SetUpstreamProxy(Appsetting.Current.UpstreamProxy);//设置上游代理
+            AppRuntime.WssService.StartListen();//启动WS服务
 
-            bool exited = false;
-            bool formExited = false;
-            AppRuntime.WssService.StartListen();
-
-            Console.ForegroundColor = ConsoleColor.Green;
             Logger.LogSucc($"{AppRuntime.WssService.ServerLocation} 弹幕服务已启动...");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            if (WinApi.GetConsoleWindow() != IntPtr.Zero)
-            {
-                Console.Title = $"抖音弹幕监听推送 [{AppRuntime.WssService.ServerLocation}]";
-            }
-            FormView mainForm = null;
+            SetTitle($"抖音弹幕监听推送 [{AppRuntime.WssService.ServerLocation}]");
 
+            AppRuntime.WssService.OnClose += (s, e) => exited = true;
+
+            //显示窗体
             if (Appsetting.Current.ShowWindow)
             {
                 var uiThread = new Thread(new ThreadStart(() =>
@@ -55,12 +50,6 @@ namespace BarrageGrab
                 uiThread.IsBackground = true;
                 uiThread.Start();
             }
-
-            AppRuntime.WssService.OnClose += (s, e) =>
-            {
-                //退出程序
-                exited = true;
-            };
 
             while (!exited)
             {
@@ -85,7 +74,17 @@ namespace BarrageGrab
             //Environment.Exit(0);
         }
 
-        private static WinApi.ControlCtrlDelegate cancelHandler = new WinApi.ControlCtrlDelegate((CtrlType) =>
+        //检测设置控制台标题
+        private static void SetTitle(string title)
+        {
+            if (WinApi.GetConsoleWindow() != IntPtr.Zero)
+            {
+                Console.Title = title;
+            }
+        }
+
+        //监听控制台消息事件
+        private static bool ControlCtrlDelegate(int CtrlType)
         {
             switch (CtrlType)
             {
@@ -99,7 +98,7 @@ namespace BarrageGrab
                     break;
             }
             return false;
-        });
+        }
 
         //检测程序是否多开
         private static bool CheckAlreadyRunning()
