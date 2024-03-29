@@ -18,12 +18,17 @@ namespace BarrageGrab
         /// <summary>
         /// Ws弹幕服务示例
         /// </summary>
-        public static WsBarrageService WssService { get; private set; } = new WsBarrageService();
+        public static WsBarrageServer WsServer { get; private set; }
 
         /// <summary>
         /// 房间缓存信息
         /// </summary>
-        public static RoomCacheManager RoomCaches { get; } = new RoomCacheManager();
+        public static RoomCacheManager RoomCaches { get; private set; }
+
+        /// <summary>
+        /// 串口服务
+        /// </summary>
+        public static ComPortServer ComPortServer { get; private set; }
 
         /// <summary>
         /// 程序进程信息
@@ -33,6 +38,13 @@ namespace BarrageGrab
         static AppRuntime()
         {
            
+        }
+
+        public static void  Init()
+        {
+            WsServer = new WsBarrageServer();
+            RoomCaches = new RoomCacheManager();
+            ComPortServer = new ComPortServer(WsServer);
         }
 
         /// <summary>

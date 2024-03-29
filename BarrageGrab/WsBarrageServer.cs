@@ -21,9 +21,14 @@ using System.Collections.Concurrent;
 namespace BarrageGrab
 {
     /// <summary>
+    /// WsBarrageServer 包装消息事件委托
+    /// </summary>
+    public delegate void PackMessageEventHandler(WsBarrageServer sender, WsBarrageServer.PackMsgEventArgs e);
+
+    /// <summary>
     /// 弹幕服务
     /// </summary>
-    public class WsBarrageServer
+    public class WsBarrageServer:IDisposable
     {
         WebSocketServer socketServer; //Ws服务器对象
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
@@ -31,24 +36,28 @@ namespace BarrageGrab
         Timer dieout = new Timer(10000);//离线客户端清理计时器
         Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
         WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
-        Appsetting Appsetting = Appsetting.Current;//全局配置文件实例        
+        AppSetting Appsetting = AppSetting.Current;//全局配置文件实例        
         static int printCount = 0; //控制台输出计数，用于判断清理控制台
-
 
         /// <summary>
         /// WS服务器启动地址
         /// </summary>
-        public string ServerLocation { get { return socketServer.Location; } }
+        public string ServerLocation => socketServer.Location;
 
         /// <summary>
         /// 数据内核
         /// </summary>
-        public WssBarrageGrab Grab { get { return grab; } }
+        public WssBarrageGrab Grab => grab;        
 
         /// <summary>
         /// 控制台打印事件
         /// </summary>
         public event EventHandler<PrintEventArgs> OnPrint;
+
+        /// <summary>
+        /// 是否已经释放资源
+        /// </summary>
+        public bool IsDisposed { get; private set; } = false;
 
         /// <summary>
         /// 服务关闭后触发
@@ -58,7 +67,7 @@ namespace BarrageGrab
         /// <summary>
         /// 消息包装完成后触发
         /// </summary>
-        public event EventHandler<PackMsgEventArgs> OnPackMessage;
+        public event PackMessageEventHandler OnPackMessage;
 
         public WsBarrageServer()
         {
@@ -111,12 +120,12 @@ namespace BarrageGrab
         //判断Rommid是否符合拦截规则
         private bool CheckRoomId(long roomid)
         {
-            if (!Appsetting.Current.WebRoomIds.Any()) return true;
+            if (!AppSetting.Current.WebRoomIds.Any()) return true;
 
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
             if (webrid <= 0) return true;
 
-            return Appsetting.Current.WebRoomIds.Contains(webrid);
+            return AppSetting.Current.WebRoomIds.Contains(webrid);
         }
 
         //解析用户
@@ -165,7 +174,7 @@ namespace BarrageGrab
                 text += $" [{msg.User?.GenderToString()}] ";
             }
 
-            ConsoleColor color = Appsetting.Current.ColorMap[barType].Item1;
+            ConsoleColor color = AppSetting.Current.ColorMap[barType].Item1;
             var append = msg.Content;
             switch (barType)
             {
@@ -176,13 +185,13 @@ namespace BarrageGrab
 
             text += append;
 
-            if (Appsetting.Current.BarrageLog)
+            if (AppSetting.Current.BarrageLog)
             {
                 Logger.LogBarrage(barType, msg);
             }
 
             if (!Appsetting.PrintBarrage) return;
-            if (Appsetting.Current.PrintFilter.Any() && !Appsetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
+            if (AppSetting.Current.PrintFilter.Any() && !AppSetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
 
             OnPrint?.Invoke(this, new PrintEventArgs()
             {
@@ -201,7 +210,7 @@ namespace BarrageGrab
         }
 
         //发送消息包装事件
-        private void FirePack(Msg msg, PackMsgType barType)
+        private async void FirePack(Msg msg, PackMsgType barType)
         {
             if (OnPackMessage == null) return;
             var arg = new PackMsgEventArgs()
@@ -210,7 +219,7 @@ namespace BarrageGrab
                 Message = msg
             };
             //异步执行
-            Task.Run(() => OnPackMessage(this, arg));
+            OnPackMessage(this, arg);
         }
 
         //粉丝团
@@ -524,7 +533,7 @@ namespace BarrageGrab
                     switch (cmdPack.Cmd)
                     {
                         case CommandCode.Close:
-                            this.Close();
+                            this.Dispose();
                             break;
                         case CommandCode.EnableProxy:
                             {
@@ -566,7 +575,7 @@ namespace BarrageGrab
         public void Broadcast(BarrageMsgPack pack)
         {
             if (pack == null) return;
-            if (Appsetting.Current.PushFilter.Any() && !Appsetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
+            if (AppSetting.Current.PushFilter.Any() && !AppSetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
 
             var offLines = new List<string>();
             foreach (var item in socketList)
@@ -590,20 +599,28 @@ namespace BarrageGrab
         /// </summary>
         public void StartListen()
         {
-            this.grab.Start(); //启动代理
-            this.socketServer.Start(Listen);//启动监听           
+            try
+            {
+                this.grab.Start(); //启动代理
+                this.socketServer.Start(Listen);//启动监听         
+            }
+            catch (Exception)
+            {
+                this.Dispose();
+                throw;
+            }              
         }
 
         /// <summary>
         /// 关闭服务器连接，并关闭系统代理
         /// </summary>
-        public void Close()
+        public void Dispose()
         {
             socketList.Values.ToList().ForEach(f => f.Socket.Close());
             socketList.Clear();
             socketServer.Dispose();
             grab.Dispose();
-
+            this.IsDisposed = true;
             this.OnClose?.Invoke(this, EventArgs.Empty);
         }
 
@@ -658,6 +675,6 @@ namespace BarrageGrab
             /// 消息内容
             /// </summary>
             public Msg Message { get; set; }
-        }
+        }        
     }
 }

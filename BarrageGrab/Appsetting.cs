@@ -10,13 +10,13 @@ using System.Drawing;
 
 namespace BarrageGrab
 {
-    internal class Appsetting
+    internal class AppSetting
     {
-        private static readonly Appsetting ins = new Appsetting();
+        private static readonly AppSetting ins = new AppSetting();
 
-        public static Appsetting Current { get { return ins; } }
+        public static AppSetting Current { get { return ins; } }
 
-        public Appsetting()
+        public AppSetting()
         {
             try
             {
@@ -24,7 +24,7 @@ namespace BarrageGrab
                 WsProt = int.Parse(AppSettings["wsListenPort"]);
                 PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
                 ProxyPort = int.Parse(AppSettings["proxyPort"]);
-                PrintFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w=>w>0).ToArray();
+                PrintFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
                 PushFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
                 LogFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
                 FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
@@ -39,26 +39,10 @@ namespace BarrageGrab
                 ForcePolling = bool.Parse(AppSettings["forcePolling"].Trim());
                 PollingInterval = int.Parse(AppSettings["pollingInterval"].Trim());
                 DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
-                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w=>!string.IsNullOrWhiteSpace(w)).Select(x => long.Parse(x)).ToArray();
+                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).Select(x => long.Parse(x)).ToArray();
 
-                var printFilter = AppSettings["printFilter"].Trim().ToLower();
-                var pushFilter = AppSettings["pushFilter"].Trim().ToLower();
-                var logFilter = AppSettings["logFilter"].Trim().ToLower();                
-                if (!string.IsNullOrWhiteSpace(printFilter))
-                {
-                    if (string.IsNullOrWhiteSpace(printFilter)) PrintFilter = new int[0];
-                    else PrintFilter = printFilter.Split(',').Select(x => int.Parse(x)).ToArray();
-                }
-                if (!string.IsNullOrWhiteSpace(pushFilter))
-                {
-                    if (string.IsNullOrWhiteSpace(pushFilter)) PushFilter = new int[0];
-                    else PushFilter = pushFilter.Split(',').Select(x => int.Parse(x)).ToArray();
-                }
-                if (!string.IsNullOrWhiteSpace(logFilter))
-                {
-                    if (string.IsNullOrWhiteSpace(logFilter)) LogFilter = new int[0];
-                    else LogFilter = logFilter.Split(',').Select(x => int.Parse(x)).ToArray();
-                }
+                ConfigComPort();
+                ConfigFilter();
             }
             catch (Exception ex)
             {
@@ -67,11 +51,55 @@ namespace BarrageGrab
             }
         }
 
+
+        //com串口设置
+        private void ConfigComPort()
+        {
+            var comPort = AppSettings["comPort"];
+            if (!comPort.IsNullOrWhiteSpace())
+            {
+                try
+                {
+                    var spit = comPort.Split(':');
+                    ComPort = spit[0].Trim();
+                    ComBaudRate = int.Parse(spit[1].Trim());
+                    UseComPortFilter = bool.Parse(AppSettings["useComPortFilter"]);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("串口配置格式错误，" + ex.Message, ex);
+                }
+            }
+        }
+
+        //各种过滤器设置
+        private void ConfigFilter()
+        {
+            var printFilter = AppSettings["printFilter"].Trim().ToLower();
+            var pushFilter = AppSettings["pushFilter"].Trim().ToLower();
+            var logFilter = AppSettings["logFilter"].Trim().ToLower();
+            if (!string.IsNullOrWhiteSpace(printFilter))
+            {
+                if (string.IsNullOrWhiteSpace(printFilter)) PrintFilter = new int[0];
+                else PrintFilter = printFilter.Split(',').Select(x => int.Parse(x)).ToArray();
+            }
+            if (!string.IsNullOrWhiteSpace(pushFilter))
+            {
+                if (string.IsNullOrWhiteSpace(pushFilter)) PushFilter = new int[0];
+                else PushFilter = pushFilter.Split(',').Select(x => int.Parse(x)).ToArray();
+            }
+            if (!string.IsNullOrWhiteSpace(logFilter))
+            {
+                if (string.IsNullOrWhiteSpace(logFilter)) LogFilter = new int[0];
+                else LogFilter = logFilter.Split(',').Select(x => int.Parse(x)).ToArray();
+            }
+        }
+
         public void Save()
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            
-            config.AppSettings.Settings["wsListenPort"].Value = WsProt.ToString();            
+
+            config.AppSettings.Settings["wsListenPort"].Value = WsProt.ToString();
             config.AppSettings.Settings["printBarrage"].Value = PrintBarrage.ToString().ToLower();
             config.AppSettings.Settings["printFilter"].Value = string.Join("", PrintFilter);
             config.AppSettings.Settings["pushFilter"].Value = string.Join("", PushFilter);
@@ -80,7 +108,7 @@ namespace BarrageGrab
             config.AppSettings.Settings["listenAny"].Value = ListenAny.ToString().ToLower();
             config.AppSettings.Settings["hideConsole"].Value = HideConsole.ToString().ToLower();
             config.AppSettings.Settings["barrageFileLog"].Value = HideConsole.ToString().ToLower();
-            
+
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection(config.AppSettings.SectionInformation.Name);
         }
@@ -200,5 +228,20 @@ namespace BarrageGrab
         /// 禁用直播页面脚本缓存
         /// </summary>
         public bool DisableLivePageScriptCache { get; private set; } = true;
+
+        /// <summary>
+        /// 配置的串口
+        /// </summary>
+        public string ComPort { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 波特率
+        /// </summary>
+        public int ComBaudRate { get; set; } = 9600;
+
+        /// <summary>
+        /// 是否启用串口过滤器脚本
+        /// </summary>
+        public bool UseComPortFilter { get; set; }
     }
 }
