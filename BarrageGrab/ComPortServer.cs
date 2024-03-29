@@ -18,7 +18,7 @@ namespace BarrageGrab
 
         static ComPortServer()
         {
-            if (AppSetting.Current.UseComPortFilter)
+            if (Appsetting.Current.UseComPortFilter)
             {
                 jsEngine = JsEngine.CreateNewEngine();
                 var jsFile = JsEngine.GetJsFile("comPortFilter.js");
@@ -28,8 +28,8 @@ namespace BarrageGrab
 
         public ComPortServer(WsBarrageServer server)
         {
-            string portName = AppSetting.Current.ComPort;
-            int baudRate = AppSetting.Current.ComBaudRate;
+            string portName = Appsetting.Current.ComPort;
+            int baudRate = Appsetting.Current.ComBaudRate;
             if (portName.IsNullOrWhiteSpace())
             {
                 return;
@@ -50,7 +50,7 @@ namespace BarrageGrab
         {
             if (!sendPort.IsOpen) return;
             if (e == null) return;
-            if (!AppSetting.Current.UseComPortFilter)
+            if (!Appsetting.Current.UseComPortFilter)
             {
                 var json = e.ToJson() + "\r\n";
                 var jbuff = Encoding.UTF8.GetBytes(json);

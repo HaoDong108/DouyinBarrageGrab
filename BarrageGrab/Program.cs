@@ -63,21 +63,21 @@ namespace BarrageGrab
             AppRuntime.Init();
             WinApi.SetConsoleCtrlHandler(controlCtr, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
-            AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole);//控制控制台可见
-            AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy);//设置上游代理
+            AppRuntime.DisplayConsole(!Appsetting.Current.HideConsole);//控制控制台可见
+            AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(Appsetting.Current.UpstreamProxy);//设置上游代理
             AppRuntime.WsServer.OnClose += (s, e) =>
             {
                 exited = true;
             };
 
             //串口写入服务
-            if (!AppSetting.Current.ComPort.IsNullOrWhiteSpace())
+            if (!Appsetting.Current.ComPort.IsNullOrWhiteSpace())
             {
                 AppRuntime.ComPortServer.OpenStart();
             }
 
             //显示窗体
-            if (AppSetting.Current.ShowWindow)
+            if (Appsetting.Current.ShowWindow)
             {
                 var uiThread = new Thread(new ThreadStart(() =>
                 {

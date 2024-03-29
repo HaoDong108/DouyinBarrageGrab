@@ -212,7 +212,7 @@ namespace BarrageGrab.Proxy
                 var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
                     {"PROCESS_NAME","'{processName}'"},
-                    {"AUTOPAUSE",AppSetting.Current.AutoPause.ToString().ToLower()}
+                    {"AUTOPAUSE",Appsetting.Current.AutoPause.ToString().ToLower()}
                 });
                 liveRoomInjectScript = scriptContext + liveRoomInjectScript;
                 var html = await e.GetResponseBodyAsString();
@@ -275,7 +275,7 @@ namespace BarrageGrab.Proxy
                 }
 
                 //给script标签 src加上时间戳避免缓存
-                if (AppSetting.Current.DisableLivePageScriptCache)
+                if (Appsetting.Current.DisableLivePageScriptCache)
                 {
                     var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
                     if (scripts != null)
@@ -311,7 +311,7 @@ namespace BarrageGrab.Proxy
                 var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
                     {"PROCESS_NAME","'{processName}'"},
-                    {"AUTOPAUSE",AppSetting.Current.AutoPause.ToString().ToLower()}
+                    {"AUTOPAUSE",Appsetting.Current.AutoPause.ToString().ToLower()}
                 });
                 liveHoomInjectScript = scriptContext + liveHoomInjectScript;
 
@@ -382,7 +382,7 @@ namespace BarrageGrab.Proxy
                 }
             }
 
-            if (url.Contains(LIVE_SCRIPT_PATH) && AppSetting.Current.ForcePolling)
+            if (url.Contains(LIVE_SCRIPT_PATH) && Appsetting.Current.ForcePolling)
             {
                 var reg = new Regex(@"if\s*\((?<patt>!this\.stopPolling)\)");
                 var js = await e.GetResponseBodyAsString();
@@ -393,7 +393,7 @@ namespace BarrageGrab.Proxy
                     var pollingIntervalMatch = pollingIntervalReg.Match(js);
                     if (pollingIntervalMatch.Success)
                     {
-                        var myValue = AppSetting.Current.PollingInterval;
+                        var myValue = Appsetting.Current.PollingInterval;
                         js = pollingIntervalReg.Replace(js, $"this.pollingInterval={myValue},");
                         Logger.PrintColor($"直播间已成功修改轮询间隔为{myValue}ms", ConsoleColor.Green);
                     }
@@ -515,7 +515,7 @@ namespace BarrageGrab.Proxy
         {
             proxyServer.Stop();
             proxyServer.Dispose();
-            if (AppSetting.Current.UsedProxy)
+            if (Appsetting.Current.UsedProxy)
             {
                 CloseSystemProxy();
             }
@@ -526,8 +526,8 @@ namespace BarrageGrab.Proxy
         /// </summary>
         override public void Start()
         {
-            proxyServer.Start(AppSetting.Current.UsedProxy);
-            if (AppSetting.Current.UsedProxy)
+            proxyServer.Start(Appsetting.Current.UsedProxy);
+            if (Appsetting.Current.UsedProxy)
             {
                 proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
                 proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);

@@ -32,7 +32,7 @@ namespace BarrageGrab.Proxy
         /// <summary>
         /// 代理端口
         /// </summary>
-        public int ProxyPort { get { return AppSetting.Current.ProxyPort; } }
+        public int ProxyPort { get { return Appsetting.Current.ProxyPort; } }
 
         public abstract string HttpUpstreamProxy { get; }
 
@@ -55,11 +55,11 @@ namespace BarrageGrab.Proxy
         {
             host = host.Trim().ToLower();
 
-            if (!AppSetting.Current.FilterHostName) return true;
+            if (!Appsetting.Current.FilterHostName) return true;
 
             if (host.StartsWith("webcast")) return true;
 
-            if (AppSetting.Current.HostNameFilter.Any(a => a.Trim().ToLower() == host)) return true;
+            if (Appsetting.Current.HostNameFilter.Any(a => a.Trim().ToLower() == host)) return true;
 
             return false;
         }
