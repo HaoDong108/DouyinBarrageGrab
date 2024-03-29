@@ -36,7 +36,7 @@ namespace BarrageGrab
         Timer dieout = new Timer(10000);//离线客户端清理计时器
         Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
         WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
-        Appsetting Appsetting = Appsetting.Current;//全局配置文件实例        
+        AppSetting Appsetting = AppSetting.Current;//全局配置文件实例        
         static int printCount = 0; //控制台输出计数，用于判断清理控制台
 
         /// <summary>
@@ -120,12 +120,12 @@ namespace BarrageGrab
         //判断Rommid是否符合拦截规则
         private bool CheckRoomId(long roomid)
         {
-            if (!Appsetting.Current.WebRoomIds.Any()) return true;
+            if (!AppSetting.Current.WebRoomIds.Any()) return true;
 
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
             if (webrid <= 0) return true;
 
-            return Appsetting.Current.WebRoomIds.Contains(webrid);
+            return AppSetting.Current.WebRoomIds.Contains(webrid);
         }
 
         //解析用户
@@ -174,7 +174,7 @@ namespace BarrageGrab
                 text += $" [{msg.User?.GenderToString()}] ";
             }
 
-            ConsoleColor color = Appsetting.Current.ColorMap[barType].Item1;
+            ConsoleColor color = AppSetting.Current.ColorMap[barType].Item1;
             var append = msg.Content;
             switch (barType)
             {
@@ -185,13 +185,13 @@ namespace BarrageGrab
 
             text += append;
 
-            if (Appsetting.Current.BarrageLog)
+            if (AppSetting.Current.BarrageLog)
             {
                 Logger.LogBarrage(barType, msg);
             }
 
             if (!Appsetting.PrintBarrage) return;
-            if (Appsetting.Current.PrintFilter.Any() && !Appsetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
+            if (AppSetting.Current.PrintFilter.Any() && !AppSetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
 
             OnPrint?.Invoke(this, new PrintEventArgs()
             {
@@ -575,7 +575,7 @@ namespace BarrageGrab
         public void Broadcast(BarrageMsgPack pack)
         {
             if (pack == null) return;
-            if (Appsetting.Current.PushFilter.Any() && !Appsetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
+            if (AppSetting.Current.PushFilter.Any() && !AppSetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
 
             var offLines = new List<string>();
             foreach (var item in socketList)

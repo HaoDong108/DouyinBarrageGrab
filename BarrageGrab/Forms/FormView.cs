@@ -32,7 +32,7 @@ namespace BarrageGrab
             AppRuntime.RoomCaches.OnCache += RoomCaches_OnCache;
             this.txb_wsaddr.Text = barServer.ServerLocation;                       
             this.txb_upstreamProxy.Text = proxy.HttpUpstreamProxy;
-            this.cbx_barrageLog.Checked = Appsetting.Current.BarrageLog;
+            this.cbx_barrageLog.Checked = AppSetting.Current.BarrageLog;
             InitTabPages();
         }
 
@@ -67,17 +67,17 @@ namespace BarrageGrab
                         if (page == this.tabPage_Ws)
                         {
                             type = "ws";
-                            ck.Checked = Appsetting.Current.PushFilter.Contains(label.Key);
+                            ck.Checked = AppSetting.Current.PushFilter.Contains(label.Key);
                         }
                         if (page == this.tabPage_Console)
                         {
                             type = "console";
-                            ck.Checked = Appsetting.Current.PrintFilter.Contains(label.Key);
+                            ck.Checked = AppSetting.Current.PrintFilter.Contains(label.Key);
                         }
                         if (page == this.tabPage_Log)
                         {
                             type = "log";
-                            ck.Checked = Appsetting.Current.LogFilter.Contains(label.Key);
+                            ck.Checked = AppSetting.Current.LogFilter.Contains(label.Key);
                         }
                         ck.Name = $"cbx_bartype_{type}_{label.Key}";
                         ck.CheckedChanged += Ck_CheckedChanged;
@@ -94,17 +94,17 @@ namespace BarrageGrab
             var selected = GetCheckedBarTypes((FlowLayoutPanel)cbx.Parent);
             if (cbx.Parent.Parent == this.tabPage_Console)
             {
-                Appsetting.Current.PrintFilter = selected;
+                AppSetting.Current.PrintFilter = selected;
             }
             if (cbx.Parent.Parent == this.tabPage_Ws)
             {
-                Appsetting.Current.PushFilter = selected;
+                AppSetting.Current.PushFilter = selected;
             }
             if(cbx.Parent.Parent == this.tabPage_Log)
             {
-                Appsetting.Current.LogFilter = selected;
+                AppSetting.Current.LogFilter = selected;
             }
-            Appsetting.Current.Save();
+            AppSetting.Current.Save();
         }
 
         private int[] GetCheckedBarTypes(FlowLayoutPanel panel)
@@ -171,7 +171,7 @@ namespace BarrageGrab
         {
             //将弹幕输出到richTextBox
             //颜色转换
-            Color color = Appsetting.Current.ColorMap[e.MsgType].Item2;
+            Color color = AppSetting.Current.ColorMap[e.MsgType].Item2;
             string msg = e.Message;
 
             this.Invoke(new Action(() =>
@@ -218,8 +218,8 @@ namespace BarrageGrab
             try
             {
                 proxy.SetUpstreamProxy(text);
-                Appsetting.Current.UpstreamProxy = text;
-                Appsetting.Current.Save();
+                AppSetting.Current.UpstreamProxy = text;
+                AppSetting.Current.Save();
             }
             catch (Exception ex)
             {
@@ -231,8 +231,8 @@ namespace BarrageGrab
         private void cbx_barrageLog_CheckedChanged(object sender, EventArgs e)
         {
             var checker = (CheckBox)sender;
-            Appsetting.Current.BarrageLog = checker.Checked;
-            Appsetting.Current.Save();
+            AppSetting.Current.BarrageLog = checker.Checked;
+            AppSetting.Current.Save();
         }
     }    
 }
