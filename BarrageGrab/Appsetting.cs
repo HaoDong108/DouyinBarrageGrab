@@ -10,13 +10,13 @@ using System.Drawing;
 
 namespace BarrageGrab
 {
-    internal class AppSetting
+    internal class Appsetting
     {
-        private static readonly AppSetting ins = new AppSetting();
+        private static readonly Appsetting ins = new Appsetting();
 
-        public static AppSetting Current { get { return ins; } }
+        public static Appsetting Current { get { return ins; } }
 
-        public AppSetting()
+        public Appsetting()
         {
             try
             {
