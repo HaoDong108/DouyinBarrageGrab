@@ -28,7 +28,7 @@ namespace BarrageGrab
     /// <summary>
     /// 弹幕服务
     /// </summary>
-    public class WsBarrageServer:IDisposable
+    public class WsBarrageServer : IDisposable
     {
         WebSocketServer socketServer; //Ws服务器对象
         Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
@@ -37,6 +37,7 @@ namespace BarrageGrab
         Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
         WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
         AppSetting Appsetting = AppSetting.Current;//全局配置文件实例        
+        WebCastGiftPack giftData = null; //礼物数据
         static int printCount = 0; //控制台输出计数，用于判断清理控制台
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace BarrageGrab
         /// <summary>
         /// 数据内核
         /// </summary>
-        public WssBarrageGrab Grab => grab;        
+        public WssBarrageGrab Grab => grab;
 
         /// <summary>
         /// 控制台打印事件
@@ -90,6 +91,38 @@ namespace BarrageGrab
             this.socketServer = socket;
             //dieout.Start();
             giftCountTimer.Start();
+
+            InitGiftData();
+        }
+
+        // 初始化礼物数据
+        private void InitGiftData()
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "LocalData", "gift.json");
+            if (File.Exists(path))
+            {
+                var jsonData = File.ReadAllText(path);
+                this.giftData = JsonConvert.DeserializeObject<WebCastGiftPack>(jsonData);
+            }
+
+            //从服务器获取礼物数据
+            DyServer.GetGifts().ContinueWith(t =>
+            {
+                if (t.IsFaulted) return;
+                if (t.Result == null) return;
+
+                this.giftData = t.Result;
+                Logger.LogInfo("礼物数据下载成功");
+                try
+                {
+                    //覆写本地数据
+                    File.WriteAllText(path, t.Result.ToJson(true));
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "缓存礼物数据到本地失败");
+                }
+            });
         }
 
         //礼物缓存清理计时器回调
@@ -123,7 +156,8 @@ namespace BarrageGrab
             if (!AppSetting.Current.WebRoomIds.Any()) return true;
 
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
-            if (webrid <= 0) return true;
+            if (webrid.IsNullOrWhiteSpace()) return true;
+            if (webrid == "未知") return true;
 
             return AppSetting.Current.WebRoomIds.Contains(webrid);
         }
@@ -166,7 +200,7 @@ namespace BarrageGrab
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId == 0 ? msg.RoomId : msg.WebRoomId)));
+            var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId)));
             var text = $"{DateTime.Now.ToString("HH:mm:ss")} [{roomName}] [{barType}]";
 
             if (msg.User != null)
@@ -279,6 +313,18 @@ namespace BarrageGrab
 
             int currCount = (int)msg.repeatCount;
             int lastCount = 0;
+
+            //纠正赋值礼物数据，比如是否连击，弹幕回送会不准确
+            var findForData = giftData?.gifts?.FirstOrDefault(f => f.id == msg.giftId);
+            if (findForData != null)
+            {
+                var ogift = msg.Gift;
+                ogift.Name = findForData.name;
+                ogift.Combo = findForData.combo;
+                ogift.diamondCount = findForData.diamond_count;
+                ogift.Name = findForData.name;
+            }
+
             //Combo 为1时，表示为可连击礼物
             if (msg.Gift.Combo)
             {
@@ -608,7 +654,7 @@ namespace BarrageGrab
             {
                 this.Dispose();
                 throw;
-            }              
+            }
         }
 
         /// <summary>
@@ -675,6 +721,6 @@ namespace BarrageGrab
             /// 消息内容
             /// </summary>
             public Msg Message { get; set; }
-        }        
+        }
     }
 }
