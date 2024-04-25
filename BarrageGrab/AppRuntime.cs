@@ -144,11 +144,11 @@ namespace BarrageGrab
             /// </summary>
             /// <param name="roomid"></param>
             /// <returns></returns>
-            public long GetCachedWebRoomid(string roomid)
+            public string GetCachedWebRoomid(string roomid)
             {
                 RoomInfo value;
-                if (RoomInfoCache.TryGetValue(roomid,out value)) return long.Parse(value.WebRoomId??"-1");
-                return -1;
+                if (RoomInfoCache.TryGetValue(roomid,out value)) return value.WebRoomId??"未知";
+                return "未知";
             }
 
             /// <summary>

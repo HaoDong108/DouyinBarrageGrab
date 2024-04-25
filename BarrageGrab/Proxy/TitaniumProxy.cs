@@ -7,7 +7,10 @@ using System.Net.Security;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BarrageGrab.Modles;
+using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Proxy.ProxyEventArgs;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
@@ -28,6 +31,7 @@ namespace BarrageGrab.Proxy
         const string USER_INFO_PATH = "/webcast/user/me/";
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
         const string LIVE_SCRIPT_PATH = "/obj/static/webcast/douyin_live";
+        const string WEBCAST_AMEMV_HOST = "webcast.amemv.com";
 
         public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
 
@@ -80,6 +84,10 @@ namespace BarrageGrab.Proxy
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
 
+            //信任证书
+            proxyServer.CertificateManager.CreateRootCertificate();
+            proxyServer.CertificateManager.TrustRootCertificate(true);
+
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
             //proxyServer.AfterResponse += ProxyServer_AfterResponse;            
@@ -121,6 +129,9 @@ namespace BarrageGrab.Proxy
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
+            //处理直播伴侣开播更新
+            await HookSelfLive(e);
+
             //处理弹幕
             await HookBarrage(e);
 
@@ -129,6 +140,51 @@ namespace BarrageGrab.Proxy
 
             //处理脚本拦截修改
             await HookScriptAsync(e);
+        }
+
+        // Hook 直播伴侣开播信息并更新
+        private async Task HookSelfLive(SessionEventArgs e)
+        {
+            //Hook 直播伴侣直播间创建 https://webcast.amemv.com/webcast/room/create/?ac=wifi&app_name=webcast_mate&version_code=7.3.3&device_platform=windows&webcast_sdk_version=1520&resolution=1707%2A1067&os_version=10.0.22621&language=zh&aid=2079&live_id=1&channel=online&device_id=2164319493312045&iid=42200736232026&extra_first_tag_id=22&extra_second_tag_id=22093&extra_third_tag_id=22093195&extra_encoder_core=qsv&extra_codec_name=h264_qsv_ex&extra_codec_is_ex=1&extra_use_265=0&msToken=8tJ0NCHWun7wHpdPd_fd0_nlUmgRwM8sQYThkqkq4-qR00mKiJ3Wd3h05r4mm5HO_R_qA2qeTIn8qR2yjcXXoh5mmXkewUuTS4G1Yoi_D-m8EZiacZVWoDqgnqw=&X-Bogus=DFSzswVLJzC4fUiKt5a4a3JCqOA1&_signature=_02B4Z6wo00001fHp2wAAAIDCdmADbSJfNUnx6d-AABpim6xRe8bmnvrrC1Z7GWTwK8sPujtot.bkv7h8bk-nde0WvO-78H3cwglXRzZk8uHTs3ZKWlZqOqaBVjgdHIRritV.peh4bkRETofZ7f
+            string uri = e.HttpClient.Request.RequestUri.ToString();
+            var urix = new Uri(uri);
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+            var response = e.HttpClient.Response;
+            if (urix.AbsolutePath != "/webcast/room/create/") return;
+            if (processName != "直播伴侣") return;
+            if (response.StatusCode != 200) return;
+            var reponse = await e.GetResponseBodyAsString();
+            RoomInfo roomInfo;
+            //缓存直播间信息
+            var tupe = RoomInfo.TryParseStreamPusherCreate(reponse, out roomInfo);
+            var code = tupe.Item1;
+            var msg = tupe.Item2;
+
+            if (code != 0)
+            {
+                Logger.LogWarn($"直播伴侣开播房间资料缓存失败，原因:{msg}");
+                return;
+            }
+
+            var jobj = JsonConvert.DeserializeObject<JObject>(reponse);
+
+            var roomid = jobj["data"]?["id_str"]?.Value<string>();
+            var sec_uid = jobj["data"]?["owner"]?["sec_uid"]?.Value<string>();
+            var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
+            var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
+
+            if (roomInfo != null && !roomid.IsNullOrWhiteSpace())
+            {
+                roomInfo.RoomId = roomid;
+                roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
+                Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname} ，更新RoomId={roomInfo.RoomId}");
+            }
+
+            if (roomInfo != null)
+            {
+                AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
+            }
         }
 
         // Hook 弹幕
@@ -425,7 +481,8 @@ namespace BarrageGrab.Proxy
             var decryptSsls = new string[]
             {
                 SCRIPT_HOST,
-                LIVE_HOST
+                LIVE_HOST,
+                WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
             };
 
             if (decryptSsls.Contains(hostname))

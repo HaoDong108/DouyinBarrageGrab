@@ -30,13 +30,13 @@ namespace BarrageGrab
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static string ToJson(this object obj)
+        public static string ToJson(this object obj,bool format = false)
         {
             if (obj is string)
             {
                 return obj.ToString();
-            }            
-            return JsonConvert.SerializeObject(obj);
+            }
+            return JsonConvert.SerializeObject(obj, format?Formatting.Indented:Formatting.None);
         }
 
         /// <summary>

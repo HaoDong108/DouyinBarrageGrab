@@ -39,7 +39,7 @@ namespace BarrageGrab
                 ForcePolling = bool.Parse(AppSettings["forcePolling"].Trim());
                 PollingInterval = int.Parse(AppSettings["pollingInterval"].Trim());
                 DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
-                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).Select(x => long.Parse(x)).ToArray();
+                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
 
                 ConfigComPort();
                 ConfigFilter();
@@ -177,7 +177,7 @@ namespace BarrageGrab
         /// <summary>
         /// 监听的房间号
         /// </summary>
-        public long[] WebRoomIds { get; private set; } = new long[0];
+        public string[] WebRoomIds { get; private set; } = new string[0];
 
         /// <summary>
         /// 使用域名过滤

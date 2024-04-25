@@ -16,7 +16,7 @@ namespace BarrageGrab.Modles
         /// Web房间号
         /// </summary>
         public string WebRoomId { get; set; }
-        
+
         /// <summary>
         /// 房间号
         /// </summary>
@@ -66,7 +66,7 @@ namespace BarrageGrab.Modles
         /// 直播间管理员用户id
         /// </summary>
         public List<string> AdminUserIds { get; set; } = new List<string>();
-     
+
         /// <summary>
         /// 主播信息
         /// </summary>
@@ -510,7 +510,7 @@ namespace BarrageGrab.Modles
         /// <param name="html"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static Tuple<int,string> TryParseRoomPageHtml(string html, out RoomInfo result)
+        public static Tuple<int, string> TryParseRoomPageHtml(string html, out RoomInfo result)
         {
             result = null;
             if (html.IsNullOrWhiteSpace())
@@ -579,7 +579,66 @@ namespace BarrageGrab.Modles
                     HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
                     FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
                 };
-            }            
+            }
+            return Tuple.Create(0, "succ");
+        }
+
+
+        /// <summary>
+        /// 从直播伴侣的直播创建回调中解析房间信息
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="info"></param>
+        /// <param name="cache">缓存</param>
+        /// <returns></returns>
+        public static Tuple<int, string> TryParseStreamPusherCreate(string json, out RoomInfo info)
+        {
+            info = null;
+            JObject res;
+            try
+            {
+                res = JsonConvert.DeserializeObject<JObject>(json);
+            }
+            catch (Exception)
+            {
+                return Tuple.Create(4, "不是合法的json格式");
+            }
+            if (res == null)
+            {
+                return Tuple.Create(1, "正文为空");
+            }
+
+            var rootData = res["data"];
+            var ownerInfo = rootData["owner"];
+
+            var dto = new RoomInfo();
+            dto.RoomId = rootData["id_str"]?.ToString() ?? "";
+            dto.AdminUserIds = rootData["admin_user_ids_str"]?.Values<string>().ToList() ?? new List<string>();
+            dto.IsLive = rootData["status"]?.Value<int>() == 2;
+            dto.Title = rootData["title"]?.ToString() ?? "";
+            dto.UserCount = long.Parse(rootData["room_view_stats"]?["display_value"]?.Value<string>() ?? "0");
+            dto.TotalUserCount = rootData["room_view_stats"]?["total_user_str"]?.Value<string>() ?? "0";
+            dto.LikeCount = rootData["like_count"]?.Value<long>() ?? 0;
+            dto.QrcodeUrl = $"https://live.douyin.com/{ownerInfo?["display_id"] ?? ""}";
+            dto.AuthInfo = rootData["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
+            dto.Cover = rootData["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
+            dto.WebRoomId = rootData["web_rid"]?.ToString() ?? ownerInfo?["display_id"]?.ToString() ?? "";
+            if (ownerInfo != null)
+            {
+                dto.Owner = new RoomAnchor()
+                {
+                    UserId = ownerInfo["id_str"].ToString(),
+                    Nickname = ownerInfo["nickname"].ToString(),
+                    SecUid = ownerInfo["sec_uid"].ToString(),
+                    HeadUrl = ownerInfo["avatar_thumb"]?["url_list"]?.Values<string>()?.FirstOrDefault()?.ToString(),
+                    FollowStatus = ownerInfo["follow_info"]?["follow_status"]?.Value<int>() ?? 0
+                };
+            }
+
+
+          
+            info = dto;
+
             return Tuple.Create(0, "succ");
         }
     }

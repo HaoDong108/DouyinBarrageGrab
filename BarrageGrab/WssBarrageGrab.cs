@@ -127,7 +127,10 @@ namespace BarrageGrab
 
                 response.Messages.ForEach(f => DoMessage(f,e.ProcessName));
             }
-            catch (Exception) { }
+            catch (Exception ex) 
+            {
+                Logger.LogError(ex,$"处理弹幕数据包时出错:{ex.Message}");
+            }
         }
 
         //http 数据处理
@@ -203,43 +206,6 @@ namespace BarrageGrab
                     case "WebcastGiftMessage":
                         {
                             var arg = Serializer.Deserialize<GiftMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-
-                            if (arg.Gift == null)
-                            {
-                                if (arg.giftId == 685)
-                                {
-                                    arg.Gift = new GiftStruct()
-                                    {
-                                        Id = arg.giftId,
-                                        Name = "粉丝灯牌",
-                                        diamondCount = 1
-                                    };
-                                }
-                                else if (arg.giftId == 3389)
-                                {
-                                    arg.Gift = new GiftStruct()
-                                    {
-                                        Id = arg.giftId,
-                                        Name = "欢乐盲盒",
-                                        diamondCount = 10
-                                    };
-                                }
-                                else if (arg.giftId == 4021)
-                                {
-                                    arg.Gift = new GiftStruct()
-                                    {
-                                        Id = arg.giftId,
-                                        Name = "欢乐拼图",
-                                        diamondCount = 10
-                                    };
-                                }
-                                else
-                                {
-                                    Logger.PrintColor("未能识别的礼物ID：" + arg.giftId, ConsoleColor.Red);
-                                    break;
-                                }
-                            }
-
                             this.OnGiftMessage?.Invoke(this, new RoomMessageEventArgs<GiftMessage>(processName, arg));
                             break;
                         }

@@ -145,6 +145,7 @@
     <Compile Include="AppRuntime.cs" />
     <Compile Include="AppSetting.cs" />
     <Compile Include="ComPortServer.cs" />
+    <Compile Include="DyServer.cs" />
     <Compile Include="Forms\FormView.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -166,6 +167,7 @@
     <Compile Include="Modles\ProtoEntity\Messages.cs" />
     <Compile Include="Modles\ProtoEntity\Wss.cs" />
     <Compile Include="Modles\RoomInfo.cs" />
+    <Compile Include="Modles\WebCastGift.cs" />
     <Compile Include="ObjectExtension.cs" />
     <Compile Include="Proxy\ProxyEventArgs\HttpResponseEventArgs.cs" />
     <Compile Include="Proxy\ProxyEventArgs\SystemProxyChangeEventArgs.cs" />
@@ -181,6 +183,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="LocalData\gift.json">
+      <CustomToolNamespace>WssBarrageService.Resource.LocalData</CustomToolNamespace>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="nlog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -215,5 +221,6 @@
       <DependentUpon>RoomDetail.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

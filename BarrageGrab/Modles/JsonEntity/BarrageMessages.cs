@@ -115,7 +115,7 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// web直播间ID
         /// </summary>
-        public long WebRoomId { get; set; }
+        public string WebRoomId { get; set; }
     }
 
     /// <summary>
