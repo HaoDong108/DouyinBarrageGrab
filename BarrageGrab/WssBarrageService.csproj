@@ -70,11 +70,19 @@
     <Reference Include="BrotliSharpLib, Version=0.3.2.0, Culture=neutral, PublicKeyToken=3f4e2a1cd615fcb7, processorArchitecture=MSIL">
       <HintPath>..\packages\BrotliSharpLib.0.3.3\lib\net451\BrotliSharpLib.dll</HintPath>
     </Reference>
+    <Reference Include="Esprima, Version=3.0.4.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f, processorArchitecture=MSIL">
+      <HintPath>..\packages\Esprima.3.0.4\lib\net462\Esprima.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Fleck, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Fleck.1.2.0\lib\net45\Fleck.dll</HintPath>
     </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.11.51.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.11.51\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
+    <Reference Include="Jint, Version=3.0.1.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f, processorArchitecture=MSIL">
+      <HintPath>..\packages\Jint.3.0.1\lib\net462\Jint.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Win32.Registry, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Win32.Registry.5.0.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
@@ -135,7 +143,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
-    <Compile Include="Appsetting.cs" />
+    <Compile Include="AppSetting.cs" />
+    <Compile Include="ComPortServer.cs" />
     <Compile Include="Forms\FormView.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -149,6 +158,7 @@
     <Compile Include="Forms\RoomDetail.Designer.cs">
       <DependentUpon>RoomDetail.cs</DependentUpon>
     </Compile>
+    <Compile Include="JsEngine.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Modles\BusinessExecption.cs" />
     <Compile Include="Modles\JsonEntity\BarrageMessages.cs" />
@@ -167,7 +177,7 @@
     <Compile Include="WinApi.cs" />
     <Compile Include="WssBarrageGrab.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WsBarrageService.cs" />
+    <Compile Include="WsBarrageServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -178,6 +188,9 @@
     <None Include="Properties\app.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Scripts\engine\comPortFilter.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Scripts\inject\livePage.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -19,7 +19,7 @@ namespace BarrageGrab
     {
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
-        Appsetting appsetting = Appsetting.Current;
+        AppSetting appsetting = AppSetting.Current;
 
         /// <summary>
         /// 进入直播间

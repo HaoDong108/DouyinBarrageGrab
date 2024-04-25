@@ -94,9 +94,9 @@ namespace BarrageGrab
         /// <param name="msg">弹幕内容</param>
         public static void LogBarrage(PackMsgType type, Msg msg)
         {
-            if (!Appsetting.Current.BarrageLog) return;
+            if (!AppSetting.Current.BarrageLog) return;
             if (type == PackMsgType.无) return;
-            if (Appsetting.Current.LogFilter.Any() && !Appsetting.Current.LogFilter.Contains(type.GetHashCode())) return;
+            if (AppSetting.Current.LogFilter.Any() && !AppSetting.Current.LogFilter.Contains(type.GetHashCode())) return;
 
             try
             {
@@ -135,7 +135,7 @@ namespace BarrageGrab
                 text += $" [{msg.User?.GenderToString()}] ";
             }
 
-            ConsoleColor color = Appsetting.Current.ColorMap[barType].Item1;
+            ConsoleColor color = AppSetting.Current.ColorMap[barType].Item1;
             var append = msg.Content;
             switch (barType)
             {
