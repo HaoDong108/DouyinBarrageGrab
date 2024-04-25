@@ -103,6 +103,11 @@ namespace BarrageGrab.Modles.JsonEntity
         public MsgUser User { get; set; }
 
         /// <summary>
+        /// 主播简要信息
+        /// </summary>
+        public RoomAnchorInfo Onwer { get; set; }
+
+        /// <summary>
         /// 消息内容
         /// </summary>
         public string Content { get; set; }
@@ -132,6 +137,37 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 粉丝团等级，没加入则0
         /// </summary>
         public int Level { get; set; }
+    }
+
+    /// <summary>
+    /// 直播间主播信息
+    /// </summary>
+    public class RoomAnchorInfo
+    {
+        /// <summary>
+        /// 用户ID
+        /// </summary>
+        public string UserId { get; set; }
+
+        /// <summary>
+        /// SecUid
+        /// </summary>
+        public string SecUid { get; set; }
+
+        /// <summary>
+        /// 昵称
+        /// </summary>
+        public string Nickname { get; set; }
+
+        /// <summary>
+        /// 头像地址
+        /// </summary>
+        public string HeadUrl { get; set; }
+
+        /// <summary>
+        /// 关注状态 0未关注,1已关注,...
+        /// </summary>
+        public int FollowStatus { get; set; }
     }
 
     /// <summary>

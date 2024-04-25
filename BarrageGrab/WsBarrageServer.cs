@@ -256,6 +256,25 @@ namespace BarrageGrab
             OnPackMessage(this, arg);
         }
 
+        //附加房间信息
+        private void AttachRoomInfo(Msg msg)
+        {
+            if(msg==null) return;
+            var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
+            if (roomInfo != null)
+            {
+                msg.Onwer = new RoomAnchorInfo()
+                {
+                    Nickname = roomInfo.Owner.Nickname,
+                    HeadUrl = roomInfo.Owner.HeadUrl,
+                    FollowStatus = roomInfo.Owner.FollowStatus,
+                    SecUid = roomInfo.Owner.SecUid,
+                    UserId = roomInfo.Owner.UserId
+                };
+                msg.WebRoomId = roomInfo.WebRoomId;
+            }
+        }
+
         //粉丝团
         private void Grab_OnFansclubMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<FansclubMessage> e)
         {
@@ -266,13 +285,14 @@ namespace BarrageGrab
                 MsgId = msg.Common.msgId,
                 Content = msg.Content,
                 RoomId = msg.Common.roomId,
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),                
                 Type = msg.Type,
                 User = GetUser(msg.User)
             };
             enty.Level = enty.User.FansClub.Level;
 
             var msgType = PackMsgType.粉丝团消息;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
@@ -297,6 +317,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.直播间统计;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -391,6 +412,7 @@ namespace BarrageGrab
             }
 
             var msgType = PackMsgType.礼物消息;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
@@ -413,6 +435,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.关注消息;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -443,6 +466,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.直播间分享;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
 
@@ -469,6 +493,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.进直播间;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -494,6 +519,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.点赞消息;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -516,6 +542,7 @@ namespace BarrageGrab
             };
 
             var msgType = PackMsgType.弹幕消息;
+            AttachRoomInfo(enty);
             FirePack(enty, msgType);
             PrintMsg(enty, msgType);
 
@@ -542,6 +569,7 @@ namespace BarrageGrab
                 };
 
                 var msgType = PackMsgType.下播;
+                AttachRoomInfo(enty);
                 FirePack(enty, msgType);
                 PrintMsg(enty, msgType);
                 pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.下播, e.Process);
