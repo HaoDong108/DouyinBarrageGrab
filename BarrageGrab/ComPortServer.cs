@@ -7,9 +7,13 @@ using System.IO.Ports;
 using Jint;
 using Jint.Runtime;
 using System.Windows.Forms;
+using Jint.Native;
 
 namespace BarrageGrab
 {
+    /// <summary>
+    /// 串口服务
+    /// </summary>
     public class ComPortServer : IDisposable
     {
         WsBarrageServer server;
@@ -22,7 +26,15 @@ namespace BarrageGrab
             {
                 jsEngine = JsEngine.CreateNewEngine();
                 var jsFile = JsEngine.GetJsFile("comPortFilter.js");
-                jsEngine.Execute(jsFile);
+                try
+                {
+                    jsEngine.Execute(jsFile);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"comPortFilter.js 执行错误: {ex.Message}");
+                    throw;
+                }                
             }
         }
 
@@ -50,6 +62,8 @@ namespace BarrageGrab
         {
             if (!sendPort.IsOpen) return;
             if (e == null) return;
+            if (e.Message == null) return;
+
             if (!AppSetting.Current.UseComPortFilter)
             {
                 var json = e.ToJson() + "\r\n";
@@ -57,7 +71,20 @@ namespace BarrageGrab
                 Send(jbuff);
                 return;
             }
-            var result = jsEngine.Invoke("onPackData", e.MsgType.GetHashCode(), e.Message);
+
+            var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(e.Message.RoomId.ToString());
+            JsValue result = null;
+            try
+            {
+                result = jsEngine.Invoke("onPackData", e.MsgType.GetHashCode(), e.Message, roomInfo);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"串口过滤器 onPackData 执行错误:{ex.Message}");
+                return;                                
+            }
+            if (result == null) return;
+
             var nocanTypes = new Types[]
             {
                 Types.Null,
@@ -115,15 +142,14 @@ namespace BarrageGrab
                 sendPort.Open();
             }
             catch (Exception ex)
-            {                
+            {
                 sendPort.Close();
                 sendPort.Dispose();
-                sendPort = null;                
+                sendPort = null;
                 throw ex;
             }
         }
 
-        
         public void Dispose()
         {
             if (sendPort == null) return;

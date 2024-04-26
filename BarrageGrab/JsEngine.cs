@@ -12,6 +12,10 @@ namespace BarrageGrab
 {
     public static class JsEngine
     {
+        /// <summary>
+        /// 创建一个Js引擎
+        /// </summary>
+        /// <returns></returns>
         public static Engine CreateNewEngine()
         {
             var jsonParse = new Func<object, string>((obj) =>
@@ -28,8 +32,15 @@ namespace BarrageGrab
              });
 
             var engine = new Engine();
+
+            engine.Execute(@"
+                byteToUint8Array = function(arr){
+                    return new Uint8Array(arr);
+                }");
+
             engine.SetValue("console", new JsConsole());
             engine.SetValue("encoder", new JsEncoder(engine));
+            engine.SetValue("bitConvert", new JsBitConvert(engine));
 
             return engine;
         }
@@ -72,11 +83,7 @@ namespace BarrageGrab
             Engine eng;
             public JsEncoder(Engine eng)
             {
-                this.eng = eng;
-                eng.Execute(@"
-                byteToUint8Array = function(arr){
-                    return new Uint8Array(arr);
-                }");
+                this.eng = eng;               
             }
 
             private JsValue ByteConvert(byte[] buff)
@@ -142,6 +149,65 @@ namespace BarrageGrab
             {
                 if (bytes == null) return null;
                 return Encoding.ASCII.GetString(bytes);
+            }
+        }
+
+        class JsBitConvert
+        {
+            Engine eng;
+            public JsBitConvert(Engine eng)
+            {
+                this.eng = eng;
+            }
+
+            private JsValue ByteConvert(byte[] buff)
+            {
+                return eng.Invoke("byteToUint8Array", buff);
+            }
+
+            public JsValue toNumber(byte[] buff,int startIndex = 0)
+            {
+                return BitConverter.ToDouble(buff, startIndex);
+            }
+            
+            public bool toBoolean(byte[] buff, int startIndex = 0)
+            {
+                return BitConverter.ToBoolean(buff, startIndex);                
+            }
+
+            public string toString(byte[] buff, int startIndex = 0)
+            {
+                return BitConverter.ToString(buff, startIndex);
+            }
+
+            public string toString(byte[] buff, int startIndex, int length)
+            {
+                return BitConverter.ToString(buff, startIndex, length);                
+            }
+
+            public JsValue getBytes(JsValue value)
+            {
+                byte[] buff = new byte[0];
+                switch (value.Type)
+                {
+                    case Jint.Runtime.Types.Empty:                        
+                    case Jint.Runtime.Types.Undefined:
+                    case Jint.Runtime.Types.Null:
+                        break;
+                    case Jint.Runtime.Types.Boolean:
+                        buff = BitConverter.GetBytes(value.AsBoolean());
+                        break;                    
+                    case Jint.Runtime.Types.Number:
+                        buff = BitConverter.GetBytes(value.AsNumber());
+                        break;                                          
+                    case Jint.Runtime.Types.BigInt:
+                        buff = BitConverter.GetBytes((long)value.AsNumber());
+                        break;                   
+                    default:
+                        throw new Exception($"不支持该类型转换:" + value.Type);                        
+                }
+
+                return ByteConvert(buff);
             }
         }
     }

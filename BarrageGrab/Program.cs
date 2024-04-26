@@ -134,11 +134,12 @@ namespace BarrageGrab
                 return !createdNew;
             }
         }
-
+#if DEBUG
         private static void JintTest()
         {
             var jsEng = JsEngine.CreateNewEngine();
             var jsFile = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Scripts", "engine", "comPortFilter.js"), Encoding.UTF8);
+            //var jsFile = @"D:\develop\Project\dy-barrage-grab\BarrageGrab\Scripts\engine\comPortFilter.js";
             jsEng.Execute(jsFile);
             var result = jsEng.Invoke("onPackData", 1, new
             {
@@ -149,9 +150,8 @@ namespace BarrageGrab
                 {
                     { "key1","value1" }
                 }
-            });
-
-            Console.WriteLine("返回类型:" + result.Type.ToString());
+            },null);
+            Console.WriteLine($"返回类型:{ result.Type.ToString()}，值:{result.ToString()}");
             if (result.Type == Types.String)
             {
                 Console.WriteLine("返回String： " + result.ToString());
@@ -169,5 +169,6 @@ namespace BarrageGrab
                 Console.WriteLine("返回Symbol： " + result.ToString());
             }
         }
+#endif
     }
 }
