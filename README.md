@@ -14,7 +14,7 @@
 
 ## ⛳近期更新
 2024-04-26 v2.7.3 (需要升级版本，请先仔细阅读)
-1. 支持串口转发，详见下方说明<a href="#tag_port">**串口转发**</a>
+1. 支持串口转发，详见下方说明<a href="#user-content-串口转发">**串口转发**</a>
 2. 推送包字段更新<br/> 
     1. 推送包添加 `Onwer`字段,用户描述主播基本信息，客户端应**优先使用其中的SecUid或者Uid作为直播间标识**
     2. **[破坏性更新]** `WebRoomid` 和 `Roomid` 改为String类型
@@ -131,7 +131,8 @@
 2. 打开浏览器进入任何直播间进行测试，没有问题再启动直播伴侣
 3. 如果需要对接自己的应用程序，请先了解 [WebSocket](https://www.bilibili.com/video/BV1KN411n7WD/?share_source=copy_web&vd_source=39ebf42c923024b9eddeca32c9e46d16) ，然后进行对接，可前往[这里](http://wstool.jackxiang.com/)测试
 
-## <a id="tag_port">🔌 串口转发</i>
+<a id="user-content-串口转发"></a>
+## 🔌 串口转发</i>
 + 配置串口：见<a href="#tag1">配置文件</a>`comPort`，配置发送串口以及波特率，不填则不启用
 + 串口报文自定义：可在根目录`Scripts/engine/comPortFilter.js` 根据自己的需求配置转发报文，提供了一定的Bit转换函数，详见其注释
 
@@ -210,7 +211,8 @@
 + 本程序仅供学习参考，不得用于商业用途，不得用于恶意搜集他人直播间用户信息!
 + 请详细阅读[免责声明](./免责声明.txt)条款后进行使用
 
-## <a id="user-content-支持一下" class="anchor">🍻支持一下?</a>
+<a id="user-content-支持一下" class="anchor"></a>
+## 🍻支持一下?
 开源不易啊老板
 <p>
 <img src="./imgs/微信.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
