@@ -39,7 +39,8 @@ namespace BarrageGrab
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.LogError(ex, "程序初始化错误");
+                MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);                
                 exited = true;
             }
 
