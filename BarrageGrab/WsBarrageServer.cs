@@ -105,6 +105,7 @@ namespace BarrageGrab
                 this.giftData = JsonConvert.DeserializeObject<WebCastGiftPack>(jsonData);
             }
 
+            return;
             //从服务器获取礼物数据
             DyServer.GetGifts().ContinueWith(t =>
             {
@@ -120,7 +121,7 @@ namespace BarrageGrab
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "缓存礼物数据到本地失败");
+                    Logger.LogWarn("缓存礼物数据到本地失败，"+ex.Message);
                 }
             });
         }
@@ -346,8 +347,11 @@ namespace BarrageGrab
                 ogift.Name = findForData.name;
             }
 
+
+
             //Combo 为1时，表示为可连击礼物
-            if (msg.Gift.Combo)
+            //if (msg.Gift.Combo)  //一堆礼物Combo 和实际可连击情况不匹配，例如亲吻，闪耀星辰 Combo =false，实际上是可连击的，抖音那帮程序员怕是看女主播冲昏头了
+            if (true)
             {
                 //判断礼物重复
                 if (msg.repeatEnd == 1)
