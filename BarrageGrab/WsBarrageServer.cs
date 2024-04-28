@@ -285,7 +285,7 @@ namespace BarrageGrab
             {
                 MsgId = msg.Common.msgId,
                 Content = msg.Content,
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),                
                 Type = msg.Type,
                 User = GetUser(msg.User)
@@ -311,7 +311,7 @@ namespace BarrageGrab
                 TotalUserCount = msg.totalUser,
                 TotalUserCountStr = msg.totalPvForAnchor,
                 OnlineUserCountStr = msg.onlineUserForAnchor,
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}",
                 User = null
@@ -395,7 +395,7 @@ namespace BarrageGrab
             var enty = new GiftMsg()
             {
                 MsgId = msg.Common.msgId,
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个",
                 DiamondCount = msg.Gift.diamondCount,
@@ -433,7 +433,7 @@ namespace BarrageGrab
             {
                 MsgId = msg.Common.msgId,
                 Content = $"{msg.User.Nickname} 关注了主播",
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 User = GetUser(msg.User)
             };
@@ -463,7 +463,7 @@ namespace BarrageGrab
             {
                 MsgId = msg.Common.msgId,
                 Content = $"{msg.User.Nickname} 分享了直播间到{type}",
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 ShareType = type,
                 User = GetUser(msg.User)
@@ -490,7 +490,7 @@ namespace BarrageGrab
             {
                 MsgId = msg.Common.msgId,
                 Content = $"{msg.User.Nickname} 来了 直播间人数:{msg.memberCount}",
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 CurrentCount = msg.memberCount,
                 User = GetUser(msg.User)
@@ -516,7 +516,7 @@ namespace BarrageGrab
                 MsgId = msg.Common.msgId,
                 Count = msg.Count,
                 Content = $"{msg.User.Nickname} 为主播点了{msg.Count}个赞，总点赞{msg.Total}",
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 Total = msg.Total,
                 User = GetUser(msg.User)
@@ -540,7 +540,7 @@ namespace BarrageGrab
             {
                 MsgId = msg.Common.msgId,
                 Content = msg.Content,
-                RoomId = msg.Common.roomId,
+                RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 User = GetUser(msg.User),
             };
@@ -567,7 +567,7 @@ namespace BarrageGrab
                 {
                     MsgId = msg.Common.msgId,
                     Content = "直播已结束",
-                    RoomId = msg.Common.roomId,
+                    RoomId = msg.Common.roomId.ToString(),
                     WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                     User = null
                 };

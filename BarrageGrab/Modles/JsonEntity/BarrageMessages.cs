@@ -115,7 +115,7 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 房间号
         /// </summary>
-        public long RoomId { get; set; }
+        public string RoomId { get; set; }
 
         /// <summary>
         /// web直播间ID
