@@ -23,14 +23,6 @@ namespace BarrageGrab
             Console.ForegroundColor = color;
         }
 
-        public static void LogSucc(string message)
-        {
-            var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
-            logger.Info(message);
-            Console.ForegroundColor = color;
-        }
-
         // 记录日志方法
         public static void LogTrace(string message)
         {
@@ -49,42 +41,31 @@ namespace BarrageGrab
 
         public static void LogWarn(string message)
         {
-            var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
             logger.Warn(message);
-            Console.ForegroundColor = color;
         }
 
         public static void LogError(string message)
         {
             var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
             logger.Error(message);
-            Console.ForegroundColor = color;
         }
 
         public static void LogError(Exception ex, string message)
         {
             var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
             logger.Error(ex, message);
-            Console.ForegroundColor = color;
         }
 
         public static void LogFatal(string message)
         {
             var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
             logger.Fatal(message);
-            Console.ForegroundColor = color;
         }
 
         public static void LogFatal(Exception ex, string message)
         {
             var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
             logger.Fatal(ex, message);
-            Console.ForegroundColor = color;
         }
 
         /// <summary>
