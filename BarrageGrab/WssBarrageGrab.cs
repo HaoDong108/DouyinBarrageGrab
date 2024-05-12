@@ -125,11 +125,11 @@ namespace BarrageGrab
                 var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(allBuff));
 
 
-                response.Messages.ForEach(f => DoMessage(f,e.ProcessName));
+                response.Messages.ForEach(f => DoMessage(f, e.ProcessName));
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                Logger.LogError(ex,$"处理弹幕数据包时出错:{ex.Message}");
+                Logger.LogError(ex, $"处理弹幕数据包时出错:{ex.Message}");
             }
         }
 
@@ -142,7 +142,7 @@ namespace BarrageGrab
 
             response.Messages.ForEach(f =>
             {
-                DoMessage(f,e.ProcessName);
+                DoMessage(f, e.ProcessName);
             });
         }
 
@@ -150,7 +150,7 @@ namespace BarrageGrab
         Dictionary<string, List<long>> msgDic = new Dictionary<string, List<long>>();
 
         //发送事件
-        private void DoMessage(Message msg,string processName)
+        private void DoMessage(Message msg, string processName)
         {
             List<long> msgIdList;
             if (msgDic.ContainsKey(msg.Method))
@@ -168,7 +168,11 @@ namespace BarrageGrab
             }
 
             msgIdList.Add(msg.msgId);
-            if (msgIdList.Count > 300) msgIdList.RemoveAt(0);
+            //每种消息类型设置300容量应该足够,不太可能存在一条消息被挤出队列后再次出现
+            while (msgIdList.Count > 300)
+            {
+                msgIdList.RemoveAt(0);
+            }
 
             try
             {
@@ -178,13 +182,13 @@ namespace BarrageGrab
                     case "WebcastMemberMessage":
                         {
                             var arg = Serializer.Deserialize<MemberMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnMemberMessage?.Invoke(this, new RoomMessageEventArgs<MemberMessage>(processName,arg));
+                            this.OnMemberMessage?.Invoke(this, new RoomMessageEventArgs<MemberMessage>(processName, arg));
                             break;
                         }
                     //关注
                     case "WebcastSocialMessage":
                         {
-                            var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));                            
+                            var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnSocialMessage?.Invoke(this, new RoomMessageEventArgs<SocialMessage>(processName, arg));
                             break;
                         }
@@ -255,7 +259,7 @@ namespace BarrageGrab
 
             public RoomMessageEventArgs()
             {
-                    
+
             }
 
             public RoomMessageEventArgs(string process, T data)

@@ -108,7 +108,8 @@ namespace BarrageGrab.Proxy
         {
             RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
             registry.SetValue("ProxyEnable", 1);
-            registry.SetValue("ProxyServer", $"http=localhost:{ProxyPort};https=localhost:{ProxyPort}");
+            registry.SetValue("ProxyServer", $"127.0.0.1:{ProxyPort}");
+           
             OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs()
             {
                 Open = true

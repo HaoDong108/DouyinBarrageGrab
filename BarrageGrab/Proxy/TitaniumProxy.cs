@@ -243,7 +243,7 @@ namespace BarrageGrab.Proxy
             var urlNoQuery = url.Split('?')[0];
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
-            var liveRoomMactch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/(\d+)");
+            var liveRoomMactch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/([0-9a-zA-Z_]+)");
             var liveHomeMatch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/?$");
             var contentType = e.HttpClient.Response.ContentType ?? "";
 
@@ -586,8 +586,10 @@ namespace BarrageGrab.Proxy
             proxyServer.Start(AppSetting.Current.UsedProxy);
             if (AppSetting.Current.UsedProxy)
             {
-                proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
-                proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
+                base.RegisterSystemProxy();
+                //使用其自带的系统代理设置可能会导致格式问题
+                //proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
+                //proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
             }
         }
     }
