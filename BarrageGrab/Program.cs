@@ -94,7 +94,7 @@ namespace BarrageGrab
             }
 
             AppRuntime.WsServer.StartListen();//启动WS以及代理服务
-            Logger.LogSucc($"{AppRuntime.WsServer.ServerLocation} 弹幕服务已启动...");
+            Logger.PrintColor($"{AppRuntime.WsServer.ServerLocation} 弹幕服务已启动...",ConsoleColor.Green);
             SetTitle($"抖音弹幕监听推送 [{AppRuntime.WsServer.ServerLocation}]");
         }
 
