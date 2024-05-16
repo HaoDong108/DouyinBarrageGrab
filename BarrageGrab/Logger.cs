@@ -83,6 +83,7 @@ namespace BarrageGrab
             {
                 var dir = Path.Combine(AppContext.BaseDirectory, "logs", "弹幕日志");
                 var room = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
+                if(room == null) return;
                 var date = DateTime.Now.ToString("yyyy年MM月dd日直播");
                 dir = Path.Combine(dir, $"({room.WebRoomId}){room?.Owner?.Nickname ?? "-1"}", date);
                 if (!Directory.Exists(dir))

@@ -31,5 +31,10 @@ namespace BarrageGrab.Proxy.ProxyEventArgs
         /// 域名
         /// </summary>
         public string HostName { get; set; }        
+
+        /// <summary>
+        /// 有效载荷
+        /// </summary>
+        public byte[] Payload { get; set; }
     }
 }

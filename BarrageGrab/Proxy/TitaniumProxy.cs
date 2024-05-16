@@ -207,13 +207,15 @@ namespace BarrageGrab.Proxy
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
-                //var payload = await e.GetResponseBody();
+                var payload = await e.GetResponseBody();
+                
                 base.FireOnFetchResponse(new HttpResponseEventArgs()
                 {
                     HttpClient = e.HttpClient,
                     ProcessID = processid,
                     HostName = hostname,
                     ProcessName = base.GetProcessName(processid),
+                    Payload = payload
                 });
             }
         }

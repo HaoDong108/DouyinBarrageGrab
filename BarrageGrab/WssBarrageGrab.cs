@@ -136,7 +136,9 @@ namespace BarrageGrab
         //http 数据处理
         private void Proxy_OnFetchResponse(object sender, HttpResponseEventArgs e)
         {
-            var payload = e.HttpClient.Response.Body;
+            var payload = e.Payload;
+
+            if (payload == null || payload.Length == 0) return;
 
             var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
 

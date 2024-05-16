@@ -29,11 +29,7 @@ namespace BarrageGrab
             InitializeComponent();
             barServer.OnPrint += WssService_OnPrint;
             barServer.Grab.Proxy.OnProxyStatus += Proxy_OnProxyStatus;
-            AppRuntime.RoomCaches.OnCache += RoomCaches_OnCache;
-            this.txb_wsaddr.Text = barServer.ServerLocation;                       
-            this.txb_upstreamProxy.Text = proxy.HttpUpstreamProxy;
-            this.cbx_barrageLog.Checked = AppSetting.Current.BarrageLog;
-            InitTabPages();
+            AppRuntime.RoomCaches.OnCache += RoomCaches_OnCache;          
         }
 
         private void InitTabPages()
@@ -155,6 +151,11 @@ namespace BarrageGrab
 
         private void FormView_Load(object sender, EventArgs e)
         {
+            this.txb_wsaddr.Text = barServer.ServerLocation;
+            this.txb_upstreamProxy.Text = proxy.HttpUpstreamProxy;
+            this.cbx_barrageLog.Checked = AppSetting.Current.BarrageLog;
+            InitTabPages();
+
             this.cbx_enableProxy.Checked = SystemProxy.ProxyIsOpen();
         }
 
