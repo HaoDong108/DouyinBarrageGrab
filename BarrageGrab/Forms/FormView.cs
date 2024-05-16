@@ -180,13 +180,13 @@ namespace BarrageGrab
                 this.rich_output.SelectionColor = color;
                 this.rich_output.AppendText(msg + "\n");
                 this.rich_output.ScrollToCaret();
-            }));
 
-            if (++printCount > 10000)
-            {
-                this.rich_output.Clear();
-                printCount = 0;
-            }
+                if (++printCount > 10000)
+                {
+                    this.rich_output.Clear();
+                    printCount = 0;
+                }
+            }));          
         }
 
         private void cbx_enableProxy_CheckedChanged(object sender, EventArgs e)
