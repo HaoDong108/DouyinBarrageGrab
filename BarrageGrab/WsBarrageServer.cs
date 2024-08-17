@@ -347,48 +347,41 @@ namespace BarrageGrab
                 ogift.Name = findForData.name;
             }
 
-
-
-            //Combo 为1时，表示为可连击礼物
-            //if (msg.Gift.Combo)  //一堆礼物Combo 和实际可连击情况不匹配，例如亲吻，闪耀星辰 Combo =false，实际上是可连击的，抖音那帮程序员怕是看女主播冲昏头了
-            if (true)
+            //判断礼物重复
+            if (msg.repeatEnd == 1 && giftCountCache.ContainsKey(key))
             {
-                //判断礼物重复
-                if (msg.repeatEnd == 1)
+                //清除缓存中的key
+                if (msg.groupId > 0 )
                 {
-                    //清除缓存中的key
-                    if (msg.groupId > 0 && giftCountCache.ContainsKey(key))
-                    {
-                        Tuple<int, DateTime> _;
-                        giftCountCache.TryRemove(key, out _);
-                    }
-                    return;
+                    Tuple<int, DateTime> _;
+                    giftCountCache.TryRemove(key, out _);
                 }
-                var backward = currCount <= lastCount;
-                if (currCount <= 0) currCount = 1;
-
-                if (giftCountCache.ContainsKey(key))
-                {
-                    lastCount = giftCountCache[key].Item1;
-                    backward = currCount <= lastCount;
-                    if (!backward)
-                    {
-                        lock (giftCountCache)
-                        {
-                            giftCountCache[key] = Tuple.Create(currCount, DateTime.Now);
-                        }
-                    }
-                }
-                else
-                {
-                    if (msg.groupId > 0 && !backward)
-                    {
-                        giftCountCache.TryAdd(key, Tuple.Create(currCount, DateTime.Now));
-                    }
-                }
-                //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
-                if (backward) return;
+                return;
             }
+            var backward = currCount <= lastCount;
+            if (currCount <= 0) currCount = 1;
+
+            if (giftCountCache.ContainsKey(key))
+            {
+                lastCount = giftCountCache[key].Item1;
+                backward = currCount <= lastCount;
+                if (!backward)
+                {
+                    lock (giftCountCache)
+                    {
+                        giftCountCache[key] = Tuple.Create(currCount, DateTime.Now);
+                    }
+                }
+            }
+            else
+            {
+                if (msg.groupId > 0 && !backward)
+                {
+                    giftCountCache.TryAdd(key, Tuple.Create(currCount, DateTime.Now));
+                }
+            }
+            //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
+            if (backward) return;
 
             var count = currCount - lastCount;
 
