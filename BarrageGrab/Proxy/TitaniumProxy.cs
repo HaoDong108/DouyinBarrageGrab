@@ -16,6 +16,8 @@ using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
 using Titanium.Web.Proxy.Models;
 using Titanium.Web.Proxy.StreamExtended.Network;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 
 namespace BarrageGrab.Proxy
 {
@@ -65,7 +67,7 @@ namespace BarrageGrab.Proxy
                 Logger.LogWarn("代理环境设置失败：" + ex.Message);
             }
         }
-        
+
         public TitaniumProxy()
         {
             //注册系统代理
@@ -75,9 +77,10 @@ namespace BarrageGrab.Proxy
             proxyServer.ReuseSocket = false;
             proxyServer.EnableConnectionPool = true;
             proxyServer.ForwardToUpstreamGateway = true;
-            proxyServer.CertificateManager.SaveFakeCertificates = true;
 
-            proxyServer.CertificateManager.RootCertificate = proxyServer.CertificateManager.LoadRootCertificate();
+            proxyServer.CertificateManager.CertificateValidDays = 365 * 10;
+            proxyServer.CertificateManager.SaveFakeCertificates = true;
+            proxyServer.CertificateManager.RootCertificate = GetCert();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
                 Logger.PrintColor("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
@@ -95,6 +98,62 @@ namespace BarrageGrab.Proxy
             explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
+        }
+
+        private X509Certificate2 GetCert()
+        {
+            X509Certificate2 result = proxyServer.CertificateManager.LoadRootCertificate();
+
+            if (result != null) return result;
+
+            // 打开“受信任的根证书颁发机构”存储区
+            using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                // 遍历证书集合
+                foreach (X509Certificate2 cert in store.Certificates)
+                {
+                    try
+                    {
+                        // 尝试使用证书创建 X509Certificate2 实例
+                        X509Certificate2 certificate = new X509Certificate2(cert);
+
+                        //判断过期
+                        if (DateTime.Now > certificate.NotAfter) continue;
+
+                        //判断黑名单
+                        var black = new string[] { "localhost" };
+                        if (certificate.FriendlyName.ToLower().LikeIn(black) ||
+                            certificate.Subject.ToLower().LikeIn(black)
+                           ) continue;
+
+
+                        if (certificate.FriendlyName.ToLower().LikeIn("titanium"))
+                        {
+                            result = certificate;
+                            break;
+                        }
+
+                        // 打印证书信息
+                        //Console.WriteLine("证书: " + certificate.Subject);
+                        //Console.WriteLine("颁发者: " + certificate.Issuer);
+                        //Console.WriteLine("有效期: " + certificate.NotBefore + " - " + certificate.NotAfter);
+
+                        //result = certificate;
+                        //break;
+                    }
+                    catch (CryptographicException ex)
+                    {
+                        //捕获加密异常，如果证书需要密码，这里会抛出异常
+                        throw new Exception("证书加载失败: " + ex.Message);
+                    }
+                }
+
+                store.Close();
+            }
+
+            return result;
         }
 
         public override void SetUpstreamProxy(string upstreamProxyAddr)
@@ -208,7 +267,7 @@ namespace BarrageGrab.Proxy
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
                 var payload = await e.GetResponseBody();
-                
+
                 base.FireOnFetchResponse(new HttpResponseEventArgs()
                 {
                     HttpClient = e.HttpClient,
@@ -585,7 +644,7 @@ namespace BarrageGrab.Proxy
         /// </summary>
         override public void Start()
         {
-            proxyServer.Start(AppSetting.Current.UsedProxy);
+            proxyServer.Start(false);
             if (AppSetting.Current.UsedProxy)
             {
                 base.RegisterSystemProxy();

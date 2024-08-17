@@ -91,7 +91,28 @@ namespace BarrageGrab
             foreach (var item in list) func(item, i++);
         }
 
-        
+        /// <summary>
+        /// 是否包含
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static bool In<T>(this T obj, params T[] args)
+        {
+            return args.Contains(obj);
+        }
+
+        /// <summary>
+        /// 是否包含
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static bool LikeIn(this string str, params string[] args)
+        {
+            return args.Any(a => str.Contains(a));
+        }
+
         public static CookieCollection ToCookies(this string cookieStr, string domain)
         {
             var cookies = new CookieCollection();
