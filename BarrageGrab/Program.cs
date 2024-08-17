@@ -18,19 +18,16 @@ namespace BarrageGrab
         static bool exited = false;
         static bool formExited = false;
         static WinApi.ControlCtrlDelegate controlCtr = ControlCtrlHandle;
-
+        static Mutex mutex = new Mutex(false, "DyBarrageGrab");
         static void Main(string[] args)
         {
-            //JintTest();
-            //Console.WriteLine("结束");
-            //Console.ReadKey();
-            //return;
-            if (CheckAlreadyRunning())
+            if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
-                Logger.PrintColor("已经有一个监听程序在运行，按任意键退出...");
+                Console.WriteLine("另一个实例已在运行。");
                 Console.ReadKey();
                 return;
             }
+
             SetTitle("抖音弹幕监听推送");
 
             try
@@ -39,7 +36,7 @@ namespace BarrageGrab
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "程序初始化错误");
+                Logger.LogError(ex, $"程序初始化错误，{ex.Message}");
                 MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);                
                 exited = true;
             }
@@ -56,7 +53,6 @@ namespace BarrageGrab
 
             Logger.PrintColor("服务器已关闭...");
             WinApi.SetConsoleCtrlHandler(controlCtr, false);//反注册捕获控制台关闭            
-
         }
 
         private static void Init()
@@ -95,7 +91,8 @@ namespace BarrageGrab
 
             AppRuntime.WsServer.StartListen();//启动WS以及代理服务
             Logger.PrintColor($"{AppRuntime.WsServer.ServerLocation} 弹幕服务已启动...",ConsoleColor.Green);
-            SetTitle($"抖音弹幕监听推送 [{AppRuntime.WsServer.ServerLocation}]");
+            Version version = System.Reflection.Assembly.GetAssembly(typeof(Program)).GetName().Version;
+            SetTitle($"抖音弹幕监听推送 v{version}  [{AppRuntime.WsServer.ServerLocation}]");
         }
 
         //检测设置控制台标题
@@ -123,53 +120,5 @@ namespace BarrageGrab
             }
             return false;
         }
-
-        //检测程序是否多开
-        private static bool CheckAlreadyRunning()
-        {
-            const string mutexName = "DyBarrageGrab";
-            // Try to create a new named mutex.
-            bool createdNew;
-            using (Mutex mutex = new Mutex(true, mutexName, out createdNew))
-            {
-                return !createdNew;
-            }
-        }
-#if DEBUG
-        private static void JintTest()
-        {
-            var jsEng = JsEngine.CreateNewEngine();
-            var jsFile = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Scripts", "engine", "comPortFilter.js"), Encoding.UTF8);
-            //var jsFile = @"D:\develop\Project\dy-barrage-grab\BarrageGrab\Scripts\engine\comPortFilter.js";
-            jsEng.Execute(jsFile);
-            var result = jsEng.Invoke("onPackData", 1, new
-            {
-                Aporp = 142,
-                Bprop = "48777",
-                Cprop = new string[] { "123" },
-                Dprop = new Dictionary<string, string>()
-                {
-                    { "key1","value1" }
-                }
-            },null);
-            Console.WriteLine($"返回类型:{ result.Type.ToString()}，值:{result.ToString()}");
-            if (result.Type == Types.String)
-            {
-                Console.WriteLine("返回String： " + result.ToString());
-            }
-            if (result.Type == Types.Object)
-            {
-                var obj = result.ToObject();
-                if (obj is byte[])
-                {
-                    Console.WriteLine("返回byte[]");
-                }
-            }
-            if (result.Type == Types.Symbol)
-            {
-                Console.WriteLine("返回Symbol： " + result.ToString());
-            }
-        }
-#endif
     }
 }
