@@ -40,6 +40,7 @@ namespace BarrageGrab
                 PollingInterval = int.Parse(AppSettings["pollingInterval"].Trim());
                 DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
                 WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
+                LiveCompanPath = AppSettings["liveCompanPath"].Trim();
 
                 ConfigComPort();
                 ConfigFilter();
@@ -243,5 +244,10 @@ namespace BarrageGrab
         /// 是否启用串口过滤器脚本
         /// </summary>
         public bool UseComPortFilter { get; set; }
+
+        /// <summary>
+        /// 直播伴侣文件位置
+        /// </summary>
+        public string LiveCompanPath { get; set; } = string.Empty;
     }
 }

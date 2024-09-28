@@ -201,7 +201,7 @@ namespace BarrageGrab
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            var roomName = (rinfo?.Owner?.Nickname ?? ("直播间" + (msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId)));
+            var roomName = (rinfo?.Owner?.Nickname ?? ((msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId)));
             var text = $"{DateTime.Now.ToString("HH:mm:ss")} [{roomName}] [{barType}]";
 
             if (msg.User != null)

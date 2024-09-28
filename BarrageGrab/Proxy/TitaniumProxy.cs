@@ -18,6 +18,11 @@ using Titanium.Web.Proxy.Models;
 using Titanium.Web.Proxy.StreamExtended.Network;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
+using HtmlDocument = HtmlAgilityPack.HtmlDocument;
+using System.Net.Http;
+using System.Text;
+using BrotliSharpLib;
+using System.IO.Compression;
 
 namespace BarrageGrab.Proxy
 {
@@ -180,6 +185,11 @@ namespace BarrageGrab.Proxy
             }
         }
 
+        private bool CheckBrowser(string processName)
+        {
+            return AppSetting.Current.ProcessFilter.Contains(processName) && processName!="直播伴侣" && processName!= "douyin";
+        }
+
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
             string uri = e.HttpClient.Request.RequestUri.ToString();
@@ -333,7 +343,7 @@ namespace BarrageGrab.Proxy
                 });
                 liveRoomInjectScript = scriptContext + liveRoomInjectScript;
                 var html = await e.GetResponseBodyAsString();
-                var doc = new HtmlAgilityPack.HtmlDocument();
+                var doc = new HtmlDocument();
                 doc.LoadHtml(html);
 
                 if (!liveRoomInjectScript.IsNullOrWhiteSpace())
@@ -370,7 +380,6 @@ namespace BarrageGrab.Proxy
                         AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                     }
 
-
                     try
                     {
 
@@ -394,26 +403,10 @@ namespace BarrageGrab.Proxy
                 //给script标签 src加上时间戳避免缓存
                 if (AppSetting.Current.DisableLivePageScriptCache)
                 {
-                    var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
-                    if (scripts != null)
-                    {
-                        var ticks = DateTime.Now.Ticks;
-                        foreach (var script in scripts)
-                        {
-                            var src = script.Attributes["src"].Value;
-                            if (src.Contains("?"))
-                            {
-                                src += "&_t=" + ticks;
-                            }
-                            else
-                            {
-                                src += "?_t=" + ticks;
-                            }
-                            script.Attributes["src"].Value = src;
-                        }
-                        html = doc.DocumentNode.OuterHtml;
-                    }
+                    ScriptAddTocks(doc);
                 }
+
+                html = doc.DocumentNode.OuterHtml;
 
                 e.SetResponseBodyString(html);
             }
@@ -451,6 +444,38 @@ namespace BarrageGrab.Proxy
                         Logger.PrintColor($"直播首页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
                     }
                 }
+            }
+        }
+
+        //给部分脚本加上时间戳避免缓存
+        private void ScriptAddTocks(HtmlDocument doc)
+        {
+            var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
+            if (scripts != null)
+            {
+                var ticks = DateTime.Now.Ticks;
+                foreach (var script in scripts)
+                {
+                    var src = script.Attributes["src"].Value;
+
+                    var srcUri = new Uri(src);
+                    if (!CheckHost(srcUri.Host)) continue;
+
+                    var fileName = Path.GetFileName(src.Split('?')[0]);
+                    //目前只需要用到相关这些js
+                    if (!fileName.StartsWith("island") && !src.Contains(LIVE_SCRIPT_PATH)) continue;
+
+                    if (src.Contains("?"))
+                    {
+                        src += "&_t=" + ticks;
+                    }
+                    else
+                    {
+                        src += "?_t=" + ticks;
+                    }
+                    script.Attributes["src"].Value = src;
+                }
+
             }
         }
 
@@ -537,6 +562,12 @@ namespace BarrageGrab.Proxy
             string url = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
 
+            e.DecryptSsl = CheckHost(hostname);
+        }
+
+        //检测域名白名单
+        protected override bool CheckHost(string hostname)
+        {
             //需要解析SSL的域名 放在这里，全开会导致性能问题，应只解析业务需要的域名
             var decryptSsls = new string[]
             {
@@ -547,24 +578,11 @@ namespace BarrageGrab.Proxy
 
             if (decryptSsls.Contains(hostname))
             {
-                e.DecryptSsl = true;
-                return;
+                return true;
             }
-            else
-            {
-                if (!CheckHost(hostname))
-                {
-                    e.DecryptSsl = false;
-                }
-            }
-        }
 
-        //检测域名白名单
-        protected override bool CheckHost(string host)
-        {
-            host = host.Trim().ToLower();
-            var succ = base.CheckHost(host);
-            return succ || host == SCRIPT_HOST || host == LIVE_HOST;
+            hostname = hostname.Trim().ToLower();
+            return base.CheckHost(hostname);
         }
 
         //WebSocket 流读取

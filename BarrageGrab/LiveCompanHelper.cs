@@ -28,8 +28,27 @@ namespace BarrageGrab
             {
                 //获取快捷方式的目标路径
                 exePath = GetInkTargetPath(shortcutPath);
+                if (!File.Exists(exePath))
+                {
+                    exePath = "";
+                    Logger.LogWarn($"直播伴侣.lnk 所指向的exe文件位置 {exePath} 无效");                    
+                }
+            }
+            else
+            {
+                Logger.LogInfo("未找到直播伴侣的桌面快捷方式");
             }
 
+            //再从配置文件读取
+            if (exePath.IsNullOrWhiteSpace())
+            {
+                exePath = AppSetting.Current.LiveCompanPath;
+                if(!exePath.IsNullOrWhiteSpace() && !File.Exists(exePath))
+                {
+                    Logger.LogWarn($"所配置的 {exePath} 不存在");
+                    exePath = "";
+                }
+            }
             return exePath;
         }
 
@@ -41,7 +60,7 @@ namespace BarrageGrab
             var exePath = GetExePath();
             if (string.IsNullOrEmpty(exePath))
             {
-                Logger.LogWarn("未找到直播伴侣的exe文件，跳过环境设置");
+                Logger.LogWarn("未找到直播伴侣.exe文件，跳过环境设置");
                 return;
             }
 
