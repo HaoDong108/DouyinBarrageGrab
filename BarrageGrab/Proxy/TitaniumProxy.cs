@@ -474,6 +474,7 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
+            var fileName = Path.GetFileName(urlNoQuery);
 
             if (contentType == null) return;
             if (!contentType.Trim().ToLower().Contains("application/javascript")) return;
@@ -483,17 +484,15 @@ namespace BarrageGrab.Proxy
             if (hostname == SCRIPT_HOST
                 //这俩个进程不需要注入
                 && processName != "直播伴侣" && processName != "douyin"
+                && fileName.StartsWith("island")
                 )
             {
                 var js = await e.GetResponseBodyAsString();
-                //var reg2 = new Regex(@"if\(!N.DJ\(\)&&(?<variable>\S).current\)\{"); //版本1,已过时
-                //if(!(0,k.DJ)()&amp;&amp;_.current){
-
-                var reg2 = new Regex(@"if\s*\(\s*\!\s*(?<v1>[\s\S]+\s*\.\s*DJ\s*\))\s*\(\s*\)\s*&\s*&\s*(?<v2>\S)\s*.\s*current\s*\)\s*\{");
+                var reg2 = new Regex(@"if\(!\((?<v1>\d,\w{1,2})\.DJ\)\(\)&&");
                 var match = reg2.Match(js);
                 if (match.Success)
                 {
-                    js = reg2.Replace(js, "if(!${v1}()&&${v2}.current){return;");
+                    js = reg2.Replace(js, "if(false &&");
                     e.SetResponseBodyString(js);
                     Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
                 }
@@ -645,12 +644,18 @@ namespace BarrageGrab.Proxy
         override public void Start()
         {
             proxyServer.Start(false);
+
             if (AppSetting.Current.UsedProxy)
             {
                 base.RegisterSystemProxy();
+                Logger.LogInfo($"系统代理代理已启动，127.0.0.1:{base.ProxyPort}");
                 //使用其自带的系统代理设置可能会导致格式问题
                 //proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
                 //proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
+            }
+            else
+            {
+                Logger.LogInfo($"代理已启动(局域代理)，127.0.0.1:{base.ProxyPort}");
             }
         }
     }
