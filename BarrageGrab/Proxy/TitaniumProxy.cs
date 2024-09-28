@@ -16,6 +16,13 @@ using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
 using Titanium.Web.Proxy.Models;
 using Titanium.Web.Proxy.StreamExtended.Network;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
+using HtmlDocument = HtmlAgilityPack.HtmlDocument;
+using System.Net.Http;
+using System.Text;
+using BrotliSharpLib;
+using System.IO.Compression;
 
 namespace BarrageGrab.Proxy
 {
@@ -65,7 +72,7 @@ namespace BarrageGrab.Proxy
                 Logger.LogWarn("代理环境设置失败：" + ex.Message);
             }
         }
-        
+
         public TitaniumProxy()
         {
             //注册系统代理
@@ -75,9 +82,10 @@ namespace BarrageGrab.Proxy
             proxyServer.ReuseSocket = false;
             proxyServer.EnableConnectionPool = true;
             proxyServer.ForwardToUpstreamGateway = true;
-            proxyServer.CertificateManager.SaveFakeCertificates = true;
 
-            proxyServer.CertificateManager.RootCertificate = proxyServer.CertificateManager.LoadRootCertificate();
+            proxyServer.CertificateManager.CertificateValidDays = 365 * 10;
+            proxyServer.CertificateManager.SaveFakeCertificates = true;
+            proxyServer.CertificateManager.RootCertificate = GetCert();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
                 Logger.PrintColor("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
@@ -95,6 +103,64 @@ namespace BarrageGrab.Proxy
             explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, ProxyPort, true);
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
+        }
+
+        private X509Certificate2 GetCert()
+        {
+            X509Certificate2 result = proxyServer.CertificateManager.LoadRootCertificate();
+
+            if (result != null) return result;
+
+            return null;
+
+            // 打开“受信任的根证书颁发机构”存储区
+            using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                // 遍历证书集合
+                foreach (X509Certificate2 cert in store.Certificates)
+                {
+                    try
+                    {
+                        // 尝试使用证书创建 X509Certificate2 实例
+                        X509Certificate2 certificate = new X509Certificate2(cert);
+
+                        //判断过期
+                        if (DateTime.Now > certificate.NotAfter) continue;
+
+                        //判断黑名单
+                        var black = new string[] { "localhost" };
+                        if (certificate.FriendlyName.ToLower().LikeIn(black) ||
+                            certificate.Subject.ToLower().LikeIn(black)
+                           ) continue;
+
+
+                        if (certificate.FriendlyName.ToLower().LikeIn("titanium"))
+                        {
+                            result = certificate;
+                            break;
+                        }
+
+                        // 打印证书信息
+                        //Console.WriteLine("证书: " + certificate.Subject);
+                        //Console.WriteLine("颁发者: " + certificate.Issuer);
+                        //Console.WriteLine("有效期: " + certificate.NotBefore + " - " + certificate.NotAfter);
+
+                        //result = certificate;
+                        //break;
+                    }
+                    catch (CryptographicException ex)
+                    {
+                        //捕获加密异常，如果证书需要密码，这里会抛出异常
+                        throw new Exception("证书加载失败: " + ex.Message);
+                    }
+                }
+
+                store.Close();
+            }
+
+            return result;
         }
 
         public override void SetUpstreamProxy(string upstreamProxyAddr)
@@ -119,6 +185,11 @@ namespace BarrageGrab.Proxy
                 proxyServer.UpStreamHttpProxy = upStreamProxy;
                 proxyServer.UpStreamHttpsProxy = upStreamProxy;
             }
+        }
+
+        private bool CheckBrowser(string processName)
+        {
+            return AppSetting.Current.ProcessFilter.Contains(processName) && processName!="直播伴侣" && processName!= "douyin";
         }
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
@@ -208,7 +279,7 @@ namespace BarrageGrab.Proxy
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
                 var payload = await e.GetResponseBody();
-                
+
                 base.FireOnFetchResponse(new HttpResponseEventArgs()
                 {
                     HttpClient = e.HttpClient,
@@ -274,7 +345,7 @@ namespace BarrageGrab.Proxy
                 });
                 liveRoomInjectScript = scriptContext + liveRoomInjectScript;
                 var html = await e.GetResponseBodyAsString();
-                var doc = new HtmlAgilityPack.HtmlDocument();
+                var doc = new HtmlDocument();
                 doc.LoadHtml(html);
 
                 if (!liveRoomInjectScript.IsNullOrWhiteSpace())
@@ -311,7 +382,6 @@ namespace BarrageGrab.Proxy
                         AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                     }
 
-
                     try
                     {
 
@@ -335,26 +405,10 @@ namespace BarrageGrab.Proxy
                 //给script标签 src加上时间戳避免缓存
                 if (AppSetting.Current.DisableLivePageScriptCache)
                 {
-                    var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
-                    if (scripts != null)
-                    {
-                        var ticks = DateTime.Now.Ticks;
-                        foreach (var script in scripts)
-                        {
-                            var src = script.Attributes["src"].Value;
-                            if (src.Contains("?"))
-                            {
-                                src += "&_t=" + ticks;
-                            }
-                            else
-                            {
-                                src += "?_t=" + ticks;
-                            }
-                            script.Attributes["src"].Value = src;
-                        }
-                        html = doc.DocumentNode.OuterHtml;
-                    }
+                    ScriptAddTocks(doc);
                 }
+
+                html = doc.DocumentNode.OuterHtml;
 
                 e.SetResponseBodyString(html);
             }
@@ -395,6 +449,38 @@ namespace BarrageGrab.Proxy
             }
         }
 
+        //给部分脚本加上时间戳避免缓存
+        private void ScriptAddTocks(HtmlDocument doc)
+        {
+            var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
+            if (scripts != null)
+            {
+                var ticks = DateTime.Now.Ticks;
+                foreach (var script in scripts)
+                {
+                    var src = script.Attributes["src"].Value;
+
+                    var srcUri = new Uri(src);
+                    if (!CheckHost(srcUri.Host)) continue;
+
+                    var fileName = Path.GetFileName(src.Split('?')[0]);
+                    //目前只需要用到相关这些js
+                    if (!fileName.StartsWith("island") && !src.Contains(LIVE_SCRIPT_PATH)) continue;
+
+                    if (src.Contains("?"))
+                    {
+                        src += "&_t=" + ticks;
+                    }
+                    else
+                    {
+                        src += "?_t=" + ticks;
+                    }
+                    script.Attributes["src"].Value = src;
+                }
+
+            }
+        }
+
         //生成注入上下文
         private string BuildContext(IDictionary<string, string> constVals)
         {
@@ -415,6 +501,7 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
+            var fileName = Path.GetFileName(urlNoQuery);
 
             if (contentType == null) return;
             if (!contentType.Trim().ToLower().Contains("application/javascript")) return;
@@ -424,19 +511,17 @@ namespace BarrageGrab.Proxy
             if (hostname == SCRIPT_HOST
                 //这俩个进程不需要注入
                 && processName != "直播伴侣" && processName != "douyin"
+                && fileName.StartsWith("island")
                 )
             {
                 var js = await e.GetResponseBodyAsString();
-                //var reg2 = new Regex(@"if\(!N.DJ\(\)&&(?<variable>\S).current\)\{"); //版本1,已过时
-                //if(!(0,k.DJ)()&amp;&amp;_.current){
-
-                var reg2 = new Regex(@"if\s*\(\s*\!\s*(?<v1>[\s\S]+\s*\.\s*DJ\s*\))\s*\(\s*\)\s*&\s*&\s*(?<v2>\S)\s*.\s*current\s*\)\s*\{");
+                var reg2 = new Regex(@"if\(!\((?<v1>\d,\w{1,2})\.DJ\)\(\)&&");
                 var match = reg2.Match(js);
                 if (match.Success)
                 {
-                    js = reg2.Replace(js, "if(!${v1}()&&${v2}.current){return;");
+                    js = reg2.Replace(js, "if(false &&");
                     e.SetResponseBodyString(js);
-                    Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
+                    Logger.PrintColor($"已成功绕过页面无操作检测\n", ConsoleColor.Green);
                 }
             }
 
@@ -479,6 +564,12 @@ namespace BarrageGrab.Proxy
             string url = e.HttpClient.Request.RequestUri.ToString();
             string hostname = e.HttpClient.Request.RequestUri.Host;
 
+            e.DecryptSsl = CheckHost(hostname);
+        }
+
+        //检测域名白名单
+        protected override bool CheckHost(string hostname)
+        {
             //需要解析SSL的域名 放在这里，全开会导致性能问题，应只解析业务需要的域名
             var decryptSsls = new string[]
             {
@@ -489,24 +580,11 @@ namespace BarrageGrab.Proxy
 
             if (decryptSsls.Contains(hostname))
             {
-                e.DecryptSsl = true;
-                return;
+                return true;
             }
-            else
-            {
-                if (!CheckHost(hostname))
-                {
-                    e.DecryptSsl = false;
-                }
-            }
-        }
 
-        //检测域名白名单
-        protected override bool CheckHost(string host)
-        {
-            host = host.Trim().ToLower();
-            var succ = base.CheckHost(host);
-            return succ || host == SCRIPT_HOST || host == LIVE_HOST;
+            hostname = hostname.Trim().ToLower();
+            return base.CheckHost(hostname);
         }
 
         //WebSocket 流读取
@@ -585,13 +663,19 @@ namespace BarrageGrab.Proxy
         /// </summary>
         override public void Start()
         {
-            proxyServer.Start(AppSetting.Current.UsedProxy);
+            proxyServer.Start(false);
+
             if (AppSetting.Current.UsedProxy)
             {
                 base.RegisterSystemProxy();
+                Logger.LogInfo($"系统代理代理已启动，127.0.0.1:{base.ProxyPort}");
                 //使用其自带的系统代理设置可能会导致格式问题
                 //proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
                 //proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
+            }
+            else
+            {
+                Logger.LogInfo($"代理已启动(局域代理)，127.0.0.1:{base.ProxyPort}");
             }
         }
     }

@@ -1,19 +1,29 @@
-# 📺 抖音弹幕监听器
+<p style="text-align:center;font-size:3rem">📺 抖音弹幕监听器</p>
+
+
+
+<p style="text-align:center">- 小白不圆 -</p>
 
 ## 🔉前文提要
 
 + Github(受网络影响，更新很可能不及时)大佬请移步 [Gitee](https://gitee.com/haodong108/dy-barrage-grab) ，参与Issues讨论，QQ技术讨论群:<br>
-  + 群1: 819927029 (已满)
+  + 群1: 819927029 
   + 群2: 789875441 (新建)
   + 注: (进群前请先⭐**Star**，并填入答案，用于排除行外人员，特殊原因请私聊我)，之前因满员踢掉的群员可申请群2。
-  + <span style="font-size:10px">开不起千人群😅</span>
 + 发行版下载地址在[这里](https://gitee.com/haodong108/dy-barrage-grab/releases)，别下成源码包了!!，**决定下载使用前请先仔细阅读文档**，不要进群提问已经介绍到的问题
-+ 💭 需要**多直播间超长稳定连接**、**自动私信**(支持群组，单发，支持多账号切换)，**私信监听**、**自动关注**、**关注，粉丝群，作品点赞，评论监听**、**直播间发弹幕**、**获取榜单**、**直播间，用户主页信息**、**采集商品上架，连麦，PK等其他所有消息**、**作品评论(支持图片)**、 等功能的可以找我(QQ 1083092844)提供一些技术支持 (注：主要面向个人直播自动化，不面向恶意j流，不支持匿名直播间，想搞采集匿名的勿扰，加群也不会有人支持)
-+ **LiveIdea** 支持dou音Web全自动化的本地WebApi服务。直播、引留解放双手，需要了解详情请加我
-+ 支持接单，个人定制，dy相关优先，其他方面也可以找我帮忙转发定制，匿名直播间需求勿扰
-+ 那年，我与TA不可告人的<a href="#user-content-支持一下">秘密</a>😏
++ 💭 需要抖音日常操作协议化，包括**多直播间超长稳定连接**、**自动私信**(支持群组，单发，支持多账号切换)，**私信监听、自动关注、粉丝群、作品点赞评论及监听、直播间发弹幕、获取直播间榜单、直播间更多消息事件、作品评论(支持图片)、发布作品** 等等功能的可以找我(Q1083092844)提供一些技术支持  (注：主要面向个人直播自动化，不面向恶意j流、水jun等，不支持匿名直播间，想搞他人直播间匿名采集的勿扰，加群也不会有人支持)
++ 支持接单、定制等，dy相关优先，其他方面也可以找我帮忙转发定制
++ 如果好用，请<a href="#user-content-支持一下">捐赠</a>个仨瓜俩枣，白某谢过各位老板
 
 ## ⛳近期更新
+
+2024-09-28 v2.7.6
+
+1. **[重要更新]** 支持免系统代理监听直播伴侣，需要在配置文件关闭`useproxy`选项，配置后监听web直播间可参考<a href="#user-content-实践指南">实践指南</a>新部分
+2. 修复了 挂机检测Js拦截逻辑
+3. 默认关闭 禁用JS文件缓存 配置项，提高网页加载速度
+4. 礼物计数相关代码有一小处调整
+5. 整合了dll为单个exe文件
 
 2024-05-16 v2.7.5
 
@@ -55,23 +65,6 @@
 3. 支持了控制台隐藏，推送器弹幕类型过滤，日志弹幕类型过滤，弹幕文件日志  (见<a href="#tag1">配置文件</a>)
 4. 支持了更多的ws命令，见 [Command.cs](./BarrageGrab/Modles/JsonEntity/Command.cs)
 
-2023-11-04 v2.6.9
-
-1. 修复了因抖音版本升级导致的WebRoomId获取不到的问题，并做了多重处理
-
-2023-09-24 v2.6.8
-
-1. 添加了上游代理支持，现在可以将无关的请求转发到其他的代理地址！详见下方配置说明`upstreamProxy`
-2. 内部添加了webRoomid 的缓存映射，只要打开直播间地址即可缓存WebRoomId和Roomid的映射关系，`WebRoomId`现已添加至ws弹幕流数据中!，需要注意直播伴侣端提取的弹幕当前不会有该字段，除非在开播后打开浏览器访问一次你的直播间
-3. MsgPack 现在添加了进程名字段`ProcessName`
-
-2023-08-17 v2.6.7
-
-1. [重要更新] 支持浏览器/客户端 http 弹幕监听，这也会解决原先版本因网络波动使抖音客户端弹幕获取方式降级，而获取不到弹幕导致必须刷新页面重新连接的问题。
-2. [重要更新] 原先的web/客户端 页面无操作检测逻辑因官方js变动而失效，本次更新修复且完善了该功能，现在会定时模拟全局按键、绕过js检测逻辑、置空Websocket.close 方法三重手段尽量避免断开连接。你也可以直接修改[直播页脚本](./BarrageGrab/Scripts/inject/livePage.js)而无需重新编译源码。
-3. ws连接现在默认监听在0.0.0.0地址，可以从其他客户端连接。
-4. 代理端口现在可选择不占用系统代理，便于某些用户直接使用浏览器代理获取弹幕(启动时携带参数，例如:"chrome.exe --proxy-server=127.0.0.1:8827"，也可以在浏览器快捷方式-目标 引号之后附加该参数)
-
 ## 🖼️控制台截图
 
 [![控制台截图](https://s1.ax1x.com/2022/11/10/z9YYPU.png)](https://imgse.com/i/z9YYPU)
@@ -98,6 +91,8 @@
   <add key="listenAny" value="true" />
   <!--系统代理端口-->
   <add key="proxyPort" value="8827" />
+  <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
+  <add key="usedProxy" value="true" />
   <!--上游代理地址，例如开启了系统代理，但是需要将其他无关请求转发到VPN工具中,例如:127.0.0.1:11223,不要带http://-->
   <add key="upstreamProxy" value="" />
   <!--在控制台输出弹幕-->
@@ -110,8 +105,6 @@
   <add key="logFilter" value="1,2,4,5,6,7,8" />
   <!--要进行过滤的Web房间ID，多个使用','分隔，根据缓存来过滤的，直播伴侣不支持 -->
   <add key="webRoomIds" value="940152769375" />
-  <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
-  <add key="usedProxy" value="true" />
   <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
   <add key="filterHostName" value="true" />
   <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
@@ -134,19 +127,20 @@
   <add key="comPort" value="" />
   <!--启用自定义消息过滤，启用后可去程序根目录 Scripts/engine/comPortFilter.js 调整过滤规则 -->
   <add key="useComPortFilter" value="true" />
+  <!--直播伴侣exe文件位置(除非程序找不到，否则请留空)-->
+  <add key="liveCompanPath" value=""/>
 </appSettings>
 ```
 
-### 推送数据格式
-
-+ 弹幕数据由WebSocket服务进行分发，使用Json格式进行推送，见项目  [BarrageMessages.cs](./BarrageGrab/Modles/JsonEntity/BarrageMessages.cs)，如需调整请克隆项目后参照 [message.proto](./BarrageGrab/proto/message.proto) 进行源码修改调整，文件包含所有弹幕相关数据结构，可前往[ws在线测试](http://wstool.jackxiang.com/)网站，连接 ws://127.0.0.1:8888 进行测试
-
 ### 使用方法
-1. 管理员身份启动本程序，第一次启动会提示安装自签名证书，程序启动后挂在后台不要关，不然再打开会监听不到正在进行中的直播弹幕。
-2. 打开浏览器进入任何直播间进行测试，没有问题再启动直播伴侣
-3. 如果需要对接自己的应用程序，请先了解 [WebSocket](https://www.bilibili.com/video/BV1KN411n7WD/?share_source=copy_web&vd_source=39ebf42c923024b9eddeca32c9e46d16) ，然后进行对接，可前往[这里](http://wstool.jackxiang.com/)测试
+1. 管理员身份启动本程序，第一次启动会提示安装自签名证书，程序启动后挂在后台不要关，程序无法中途监听已经建立连接的弹幕流
+2. 打开浏览器进入任何直播间，然后观察程序控制台中是否有弹幕滚动
+3. 如果有请往下看，否则请参考诊断排查
+4. 启动后程序控制台标题会显示 ws连接地址，如果需要对接自己的应用程序，请先了解 [WebSocket](https://www.bilibili.com/video/BV1KN411n7WD/?share_source=copy_web&vd_source=39ebf42c923024b9eddeca32c9e46d16) ，然后使用自己的程序进行对接，可前往[在线测试网站](http://wstool.jackxiang.com/)进行连接测试
+5. 对于字段不理解，请参考 [实体类源码文件](./BarrageGrab/Modles/JsonEntity/BarrageMessages.cs) 的注释，或者加群询问
 
-<a id="user-content-串口转发"></a>
+ <a id="user-content-串口转发"></a>
+
 ## 🔌 串口转发</i>
 + 配置串口：见<a href="#tag1">配置文件</a>`comPort`，配置发送串口以及波特率，不填则不启用
 + 串口报文自定义：可在根目录`Scripts/engine/comPortFilter.js` 根据自己的需求配置转发报文，提供了一定的Bit转换函数，详见其注释
@@ -177,28 +171,58 @@
 
 
 + **弹幕断连**
-
   + 如果浏览器总是连接一段时间后，就在在控制台看不到弹幕了，优先使用Chrome 和 Edge 浏览器，其他浏览器(例如360浏览器) 可能会存在该问题
-
+  
   + 尝试打开配置文件 `forcePolling` 选项，情况获取会有所改善
-
+  
   + 其他可能是网络原因，或者直播间断连导致，正在想办法优化解决中。。。需要长时间连接可以找我使用其他方式，支持直连和轮询获取方式
-
 + **程序关闭后无法上网**
 
   + 这是因为本程序运行时会占用系统代理，不正确的关闭方式可能会导致系统代理未能正确关闭，请前往找到 系统设置-网络和Internet-代理-使用代理服务器  并关闭它即可，也可管理员运行[关闭代理.bat](./关闭代理.bat)
++ **未开系统代理，但是无法监听到直播伴侣弹幕**
+
+  + 之前可以突然不行，且刚刚升级直播伴侣，请重监听启程序和直播伴侣再次尝试
+  + 如果一次都没成功，则需要检查启动菜单是否有直播伴侣的快捷方式，换言之则必须确保 `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\直播伴侣.lnk` 文件存在，否则请前往配置文件显式指定`直播伴侣.exe`文件存储路径，见配置项`liveCompanPath`
 
 
+<a id="user-content-实践指南"></a>
 
 ## 🎲 实践指南
+
+### 日常使用
+
 + **隐藏控制台**：见配置文件 `hideConsole`<br><br>
 + **远程控制程序**：例如远程关闭，隐藏/显示控制台，启用/关闭系统代理，可发送Json数据包 `{"Cmd":xx,"Data":xx}` 到ws推送地址，数据格式详见: [Command.cs](./BarrageGrab/Modles/JsonEntity/Command.cs)<br><br>
 + **启用弹幕文件日志**：见配置文件 `barrageFileLog`，启用后，抓到弹幕会记录在根目录 logs/弹幕日志 文件夹中，支持类型过滤，见`logFilter` 配置项<br><br>
 + **UI界面**： 见配置文件 `showWindow `  (做的仓促，功能简陋)<br><br>
 + **上游代理**：一般用于自己有 代理工具/代理服务器，希望在使用本程序时访问外网不受到影响，见配置文件项`upstreamProxy` 将它改为你代理工具的代理地址<br><br>
-+ **局域代理**： 若是只需要监听了浏览器，且不想占用系统代理，可创建一个浏览器快捷方式，打开属性，并在exe文件路径后附加启动参数，`--proxy-server=127.0.0.1:8827`，例如:`"C:\\xxx\chrome.exe" --proxy-server=127.0.0.1:8827`<br><br>
++ **局域代理**： (请优先参考下文 **浏览器代理切换扩展**) 可创建一个浏览器快捷方式，打开属性，并在exe文件路径后附加启动参数，`--proxy-server=127.0.0.1:8827`，例如:`"C:\\xxx\chrome.exe" --proxy-server=127.0.0.1:8827`<br><br>
 + **直播间区分**： 推送包含 `Onwer`字段,用户描述主播基本信息，客户端可以优先使用其中的`SecUid`或者`Uid`作为直播间标识，若使用`WebRoomid`则需要注意直播伴侣进程需要特殊处理，因为直播伴侣推送的WebRoomid是用户的抖音号。`RoomId`只能作为场次标识，每次开播都会不一样，不可用作直播间唯一区分<br><br>
 + **直播间地址**： 冷知识，使用`https://live.douyin.com/<抖音号>` 也可以进入主播直播间
+
+### 浏览器代理切换扩展
+
+若关闭了`usedProxy`开关，浏览器需要通过显示指定代理地址完成代理指向操作，此时可以通过浏览器扩展很好的完成这项功能，以Edge为例
+
+1. 前往扩展商店 搜索 `switchyomega` 安装
+
+   [<img src="https://s21.ax1x.com/2024/09/28/pA1SSSg.png" alt="pA1SSSg.png" style="zoom: 50%;" />](https://imgse.com/i/pA1SSSg)
+
+2. 添加弹幕代理
+
+   [<img src="https://s21.ax1x.com/2024/09/28/pA1SCOs.png" alt="pA1SCOs.png" style="zoom:50%;" />](https://imgse.com/i/pA1SCOs)
+
+3. 配置代理地址，并保存，不要配置为ws服务端口地址，程序默认代理端口是**8827**
+
+   [<img src="https://s21.ax1x.com/2024/09/28/pA1SLjJ.png" alt="pA1SLjJ.png" style="zoom:50%;" />](https://imgse.com/i/pA1SLjJ)
+
+4. 进入直播页，应用代理，完成！
+
+   [<img src="https://s21.ax1x.com/2024/09/28/pA1SXu9.png" alt="pA1SXu9.png" style="zoom:50%;" />](https://imgse.com/i/pA1SXu9)
+
+5. Chrome 用户请自行百度搜索扩展安装方法
+
+
 
 
 ## ⚠️特别注意
@@ -227,8 +251,9 @@
 + 请详细阅读[免责声明](./免责声明.txt)条款后进行使用
 
 <a id="user-content-支持一下" class="anchor"></a>
+
 ## 🍻支持一下?
-开源不易啊老板
+开源不易，老板
 <p>
 <img src="./imgs/微信.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
 </p>

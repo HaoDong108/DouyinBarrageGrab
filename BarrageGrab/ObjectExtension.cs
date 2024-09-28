@@ -91,7 +91,28 @@ namespace BarrageGrab
             foreach (var item in list) func(item, i++);
         }
 
-        
+        /// <summary>
+        /// 是否包含
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static bool In<T>(this T obj, params T[] args)
+        {
+            return args.Contains(obj);
+        }
+
+        /// <summary>
+        /// 是否包含
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static bool LikeIn(this string str, params string[] args)
+        {
+            return args.Any(a => str.Contains(a));
+        }
+
         public static CookieCollection ToCookies(this string cookieStr, string domain)
         {
             var cookies = new CookieCollection();
@@ -170,6 +191,133 @@ namespace BarrageGrab
             if (cookies == null) return;
             var cookieCollection = dic.ToCookies(domain);
             cookies.Add(cookieCollection);
-        }       
+        }
+
+        /// <summary>
+        ///  将字典转为查询参数
+        /// </summary>
+        /// <param name="dic"></param>
+        /// <returns></returns>
+        public static string ToQueryParam(this IDictionary<string, string> dic, bool encode = true)
+        {
+            if (dic == null || dic.Count == 0)
+                return string.Empty;
+
+            var queryParams = dic.Select(kvp => kvp.Key + "=" + (encode ? WebUtility.UrlEncode(kvp.Value) : kvp.Value));
+            return string.Join("&", queryParams);
+
+        }
+
+        /// <summary>
+        /// 赋值字典，没有则添加，有则覆盖
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dic"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key, TValue value)
+        {
+            if (dic.ContainsKey(key))
+            {
+                dic[key] = value;
+            }
+            else
+            {
+                dic.Add(key, value);
+            }
+        }
+
+        /// <summary>
+        ///  赋值字典，没有则添加，有则覆盖
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dic"></param>
+        /// <param name="kv"></param>
+        public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dic, KeyValuePair<TKey, TValue> kv)
+        {
+            dic.Set(kv.Key, kv.Value);
+        }
+
+        /// <summary>
+        /// 获取Uri查询参数
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static IDictionary<string, string> GetQueryParams(this UriBuilder uri)
+        {
+            if (uri == null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            var queryParams = uri.Query.TrimStart('?');
+
+            if (string.IsNullOrEmpty(queryParams))
+            {
+                return new Dictionary<string, string>();
+            }
+
+            return queryParams
+                .Split('&')
+                .Select(param => param.Split('='))
+                .ToDictionary(
+                    keyValuePair => Uri.UnescapeDataString(keyValuePair[0]),
+                    keyValuePair => Uri.UnescapeDataString(keyValuePair.Length > 1 ? keyValuePair[1] : ""));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="vals"></param>
+        public static void AddQueryParam(this UriBuilder uri, IEnumerable<KeyValuePair<string, string>> vals)
+        {
+            if (uri == null) return;
+            var dic = uri.GetQueryParams();
+            foreach (var item in vals)
+            {
+                dic.Set(item);
+            }
+            uri.Query = dic.ToQueryParam();
+        }
+
+        /// <summary>
+        /// 删除一个query项
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="key"></param>
+        public static void RemoveQueryParam(this UriBuilder uri, string key)
+        {
+            if (uri == null) return;
+            var dic = uri.GetQueryParams();
+            dic.Remove(key);
+            if (dic.Count > 0)
+            {
+                uri.Query = "?" + dic.ToQueryParam();
+            }
+            else
+            {
+                uri.Query = "";
+            }
+        }
+
+        /// <summary>
+        /// 添加参数
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static void AddQueryParam(this UriBuilder uri, string key, string value)
+        {
+            if (uri == null) return;
+            uri.AddQueryParam(new[] {
+               new KeyValuePair<string, string>(key,value)
+            });
+        }
+
     }
 }
