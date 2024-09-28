@@ -41,6 +41,7 @@ namespace BarrageGrab
                 DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
                 WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
                 LiveCompanPath = AppSettings["liveCompanPath"].Trim();
+                LiveCompanHookSwitch = bool.Parse(AppSettings["liveCompanHookSwitch"].Trim());
 
                 ConfigComPort();
                 ConfigFilter();
@@ -249,5 +250,10 @@ namespace BarrageGrab
         /// 直播伴侣文件位置
         /// </summary>
         public string LiveCompanPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// hook直播伴侣代理开关
+        /// </summary>
+        public bool LiveCompanHookSwitch { get; set; } = true;
     }
 }
