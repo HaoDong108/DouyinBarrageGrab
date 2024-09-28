@@ -111,6 +111,8 @@ namespace BarrageGrab.Proxy
 
             if (result != null) return result;
 
+            return null;
+
             // 打开“受信任的根证书颁发机构”存储区
             using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
             {
@@ -519,7 +521,7 @@ namespace BarrageGrab.Proxy
                 {
                     js = reg2.Replace(js, "if(false &&");
                     e.SetResponseBodyString(js);
-                    Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
+                    Logger.PrintColor($"已成功绕过页面无操作检测\n", ConsoleColor.Green);
                 }
             }
 
