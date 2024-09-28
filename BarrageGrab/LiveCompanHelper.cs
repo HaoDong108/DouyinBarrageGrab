@@ -57,6 +57,7 @@ namespace BarrageGrab
         /// </summary>
         public static void SwitchSetup()
         {
+            if (!AppSetting.Current.LiveCompanHookSwitch) return;
             var exePath = GetExePath();
             if (string.IsNullOrEmpty(exePath))
             {
@@ -121,11 +122,19 @@ namespace BarrageGrab
             SetSwitch("proxy-server", mineProxyHost, ref content);
 
             //移除文件损坏检测校验
-            var checkReg = new Regex(@"if\(\(0,\w.integrityCheckReport\)\(\w\),!\w\.ok\)");
+            var checkReg = new Regex(@"if\(\w{1,2}\(\w\),!\w\.ok\)");
             if (checkReg.IsMatch(content))
             {
                 content = checkReg.Replace(content, "if(false)");
-                Logger.LogInfo($"直播伴侣文件改动检测已拦截");
+                Logger.LogInfo($"直播伴侣文件改动检测点1已拦截");
+            }
+
+            
+            checkReg = new Regex(@"if\(\(0,\w.integrityCheckReport\)\(\w\),!\w\.ok\)");
+            if (checkReg.IsMatch(content))
+            {
+                content = checkReg.Replace(content, "if(false)");
+                Logger.LogInfo($"直播伴侣文件改动检测点2已拦截");
             }
 
             return content;
