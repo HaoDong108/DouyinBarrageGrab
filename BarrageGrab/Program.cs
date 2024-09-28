@@ -58,6 +58,7 @@ namespace BarrageGrab
         private static void Init()
         {
             AppRuntime.Init();
+            LiveCompanHelper.SwitchSetup();
             WinApi.SetConsoleCtrlHandler(controlCtr, true);//捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
             AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole);//控制控制台可见
@@ -90,7 +91,8 @@ namespace BarrageGrab
             }
 
             AppRuntime.WsServer.StartListen();//启动WS以及代理服务
-            Logger.PrintColor($"{AppRuntime.WsServer.ServerLocation} 弹幕服务已启动...",ConsoleColor.Green);
+            Logger.PrintColor($"{AppRuntime.WsServer.ServerLocation} 弹幕服务已启动，其他端可通过此地址获取到弹幕流信息", ConsoleColor.Green);
+
             Version version = System.Reflection.Assembly.GetAssembly(typeof(Program)).GetName().Version;
             SetTitle($"抖音弹幕监听推送 v{version}  [{AppRuntime.WsServer.ServerLocation}]");
         }
