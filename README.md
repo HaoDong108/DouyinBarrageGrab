@@ -17,9 +17,9 @@
 
 ## ⛳近期更新
 
-2024-09-28 v2.7.6
+2024-09-28 v2.7.6(beta)
 
-1. **[重要更新]** 支持免系统代理监听直播伴侣，需要在配置文件关闭`useproxy`选项，配置后监听web直播间可参考<a href="#user-content-实践指南">实践指南</a>新部分
+1. **[重要更新]** 支持免系统代理监听直播伴侣，需要在配置文件关闭`useproxy`选项以及打开`liveCompanHookSwitch`选项，配置后监听web直播间可参考<a href="#user-content-实践指南">实践指南</a>新部分
 2. 修复了 挂机检测Js拦截逻辑
 3. 默认关闭 禁用JS文件缓存 配置项，提高网页加载速度
 4. 礼物计数相关代码有一小处调整
@@ -129,6 +129,8 @@
   <add key="useComPortFilter" value="true" />
   <!--直播伴侣exe文件位置(除非程序找不到，否则请留空)-->
   <add key="liveCompanPath" value=""/>
+  <!--直播伴侣代理hook开关-->
+  <add key="liveCompanHookSwitch" value="false" />
 </appSettings>
 ```
 
@@ -180,9 +182,11 @@
 
   + 这是因为本程序运行时会占用系统代理，不正确的关闭方式可能会导致系统代理未能正确关闭，请前往找到 系统设置-网络和Internet-代理-使用代理服务器  并关闭它即可，也可管理员运行[关闭代理.bat](./关闭代理.bat)
 + **未开系统代理，但是无法监听到直播伴侣弹幕**
-
   + 之前可以突然不行，且刚刚升级直播伴侣，请重监听启程序和直播伴侣再次尝试
   + 如果一次都没成功，则需要检查启动菜单是否有直播伴侣的快捷方式，换言之则必须确保 `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\直播伴侣.lnk` 文件存在，否则请前往配置文件显式指定`直播伴侣.exe`文件存储路径，见配置项`liveCompanPath`
++ **直播伴侣打开显示文件损坏等字样**
+
+  + 这可能是因为直播伴侣更新后脚本内容有所变更，从而导致程序检测拦截失效导致的，请前往 `(exe所在位置)\resources\app`将`index.js.bak` 文件内容还原到 `index.js` 中，并关闭配置文件中的`liveCompanHookSwitch` 选项，并上报问题后等待更新
 
 
 <a id="user-content-实践指南"></a>
